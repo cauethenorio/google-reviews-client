@@ -1,0 +1,164 @@
+[project]
+name = "google-business-reviews"
+version = "0.0.1"
+description = "A lightweight Python client for Google Business Profile reviews and locations (non-official)"
+authors = [{ name = "Cauê Thenório", email = "caue@thenorio.com.br" }]
+readme = "README.md"
+keywords = ["google", "business profile", "google my business", "reviews", "ratings", "locations", "gbp", "maps"]
+requires-python = ">=3.10"
+classifiers = [
+    "Intended Audience :: Developers",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Internet :: WWW/HTTP",
+]
+
+dependencies = [
+    "httpx>=0.24.0",
+    "google-auth>=2.0",
+]
+
+[project.optional-dependencies]
+cli = ["google-auth-oauthlib>=1.0"]
+
+[project.scripts]
+google-reviews = "google_business_reviews.demo:main"
+
+[project.urls]
+Homepage = "https://cauethenorio.github.io/google-business-reviews/"
+Repository = "https://github.com/cauethenorio/google-business-reviews"
+Documentation = "https://cauethenorio.github.io/google-business-reviews/"
+
+[dependency-groups]
+dev = [
+    "pytest>=7.2.0",
+    "pre-commit>=2.20.0",
+    "tox-uv>=1.11.3",
+    "ty>=0.0.1a16",
+    "pytest-cov>=4.0.0",
+    "ruff>=0.11.5",
+
+]
+
+[build-system]
+requires = ["uv_build>=0.9.8,<0.10.0"]
+build-backend = "uv_build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/google_business_reviews"]
+
+[tool.ty.environment]
+python = "./.venv"
+python-version = "3.10"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+target-version = "py310"
+line-length = 120
+fix = true
+
+[tool.ruff.lint]
+#select = [
+#    # flake8-2020
+#    "YTT",
+#    # flake8-bandit
+#    "S",
+#    # flake8-bugbear
+#    "B",
+#    # flake8-builtins
+#    "A",
+#    # flake8-comprehensions
+#    "C4",
+#    # flake8-debugger
+#    "T10",
+#    # flake8-simplify
+#    "SIM",
+#    # isort
+#    "I",
+#    # mccabe
+#    "C90",
+#    # pycodestyle
+#    "E", "W",
+#    # pyflakes
+#    "F",
+#    # pygrep-hooks
+#    "PGH",
+#    # pyupgrade
+#    "UP",
+#    # ruff
+#    "RUF",
+#    # tryceratops
+#    "TRY",
+#]
+select = [
+            "A",
+            "ARG",
+            "B",
+            "B9",
+            "C",
+            "C4",
+            "DTZ",
+            "E", # pycodestyle errors (https://docs.astral.sh/ruff/rules/#error-e)
+            "EM",
+            "F", # pyflakes (https://docs.astral.sh/ruff/rules/#pyflakes-f)
+            "FBT",
+            "G",
+            "I", # isort (https://docs.astral.sh/ruff/rules/#isort-i)
+            "ICN",
+            "N", # pep8-naming (https://docs.astral.sh/ruff/rules/#pep8-naming-n)
+            "PIE",
+            "PLC",
+            "PLE",
+            "PLR",
+            "PLW",
+            "PTH",
+            "Q",
+            "RET",
+            "RUF",
+            "S", # flake8-bandit (https://docs.astral.sh/ruff/rules/#flake8-bandit-s)
+            "SIM",
+            "T",
+            "T10",
+            "T20",
+            "TID",
+            "TRY",
+            "UP", # pyupgrade (https://docs.astral.sh/ruff/rules/#pyupgrade-up)
+            "W", # pycodestyle warnings (https://docs.astral.sh/ruff/rules/#warning-w)
+            "YTT" # flake8-2020 (https://docs.astral.sh/ruff/rules/#flake8-2020-ytt)
+        ]
+ignore = [
+    # LineTooLong
+    "E501",
+    # DoNotAssignLambda
+    "E731",
+]
+
+[tool.ruff.lint.isort]
+    known-first-party = ["google_business_reviews"]
+
+[tool.ruff.lint.flake8-tidy-imports]
+    ban-relative-imports = "parents"
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["S101", "PLR2004"]
+"src/google_business_reviews/demo.py" = ["T201", "S603", "S607", "PLC0415"]
+
+[tool.ruff.format]
+preview = true
+
+[tool.coverage.report]
+skip_empty = true
+
+[tool.coverage.run]
+branch = true
+source = ["src"]
+
+[tool.uv.workspace]
+members = []
