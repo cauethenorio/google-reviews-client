@@ -4,29 +4,29 @@ from unittest.mock import MagicMock, Mock, patch
 import google.auth.credentials
 import httpx
 
-from google_business_reviews.client import GoogleBusinessClient, _HttpxAuthRequest, _HttpxResponse
-from google_business_reviews.exceptions import (
+from google_reviews_client.client import GoogleReviewsClient, _HttpxAuthRequest, _HttpxResponse
+from google_reviews_client.exceptions import (
     AuthenticationError,
     GoogleAPIError,
-    GoogleBusinessError,
+    GoogleReviewsError,
     HTTPError,
     NotFoundError,
     PermissionError,  # noqa: A004
     RateLimitError,
 )
-from google_business_reviews.http_client import BaseHTTPClient
-from google_business_reviews.models import Review
+from google_reviews_client.http_client import BaseHTTPClient
+from google_reviews_client.models import Review
 
 
-class TestGoogleBusinessClientInit:
+class TestGoogleReviewsClientInit:
     def test_accepts_credentials(self):
         creds = Mock(spec=google.auth.credentials.Credentials)
-        client = GoogleBusinessClient(credentials=creds)
+        client = GoogleReviewsClient(credentials=creds)
         assert client.credentials is creds
 
     def test_creates_http_client_from_class_attribute(self):
         creds = Mock(spec=google.auth.credentials.Credentials)
-        client = GoogleBusinessClient(credentials=creds)
+        client = GoogleReviewsClient(credentials=creds)
         assert client.http_client is not None
 
     def test_custom_http_client_class(self):
@@ -34,7 +34,7 @@ class TestGoogleBusinessClientInit:
             def get(self, _url, *, _params=None, _headers=None):
                 return {}
 
-        class CustomClient(GoogleBusinessClient):
+        class CustomClient(GoogleReviewsClient):
             http_client_class = FakeHTTPClient
 
         creds = Mock(spec=google.auth.credentials.Credentials)
@@ -45,7 +45,7 @@ class TestGoogleBusinessClientInit:
 class TestAuthenticatedGet:
     def _make_client(self):
         creds = Mock(spec=google.auth.credentials.Credentials)
-        client = GoogleBusinessClient(credentials=creds)
+        client = GoogleReviewsClient(credentials=creds)
         client.http_client = Mock(spec=BaseHTTPClient)
         return client, creds
 
@@ -169,22 +169,22 @@ class TestAuthenticatedGet:
         except GoogleAPIError as e:
             assert e.body == "Service Unavailable"
 
-    def test_maps_unknown_status_to_google_business_error(self):
+    def test_maps_unknown_status_to_google_reviews_error(self):
         client, _ = self._make_client()
         client.http_client.get.side_effect = HTTPError(418, "I'm a teapot")
 
         try:
             client._authenticated_get("https://example.com/api")
-            msg = "Expected GoogleBusinessError"
+            msg = "Expected GoogleReviewsError"
             raise AssertionError(msg)
-        except GoogleBusinessError as e:
+        except GoogleReviewsError as e:
             assert e.body == "I'm a teapot"
 
 
 class TestListAccounts:
     def test_list_accounts_returns_account_list(self):
         creds = Mock(spec=google.auth.credentials.Credentials)
-        client = GoogleBusinessClient(credentials=creds)
+        client = GoogleReviewsClient(credentials=creds)
         client.http_client = Mock(spec=BaseHTTPClient)
         client.http_client.get.return_value = {
             "accounts": [
@@ -205,7 +205,7 @@ class TestListAccounts:
 
     def test_list_accounts_empty(self):
         creds = Mock(spec=google.auth.credentials.Credentials)
-        client = GoogleBusinessClient(credentials=creds)
+        client = GoogleReviewsClient(credentials=creds)
         client.http_client = Mock(spec=BaseHTTPClient)
         client.http_client.get.return_value = {}
 
@@ -217,7 +217,7 @@ class TestListAccounts:
 class TestListLocations:
     def _make_client(self):
         creds = Mock(spec=google.auth.credentials.Credentials)
-        client = GoogleBusinessClient(credentials=creds)
+        client = GoogleReviewsClient(credentials=creds)
         client.http_client = Mock(spec=BaseHTTPClient)
         return client
 
@@ -264,7 +264,7 @@ class TestListLocations:
 class TestListReviews:
     def _make_client(self):
         creds = Mock(spec=google.auth.credentials.Credentials)
-        client = GoogleBusinessClient(credentials=creds)
+        client = GoogleReviewsClient(credentials=creds)
         client.http_client = Mock(spec=BaseHTTPClient)
         return client
 
@@ -396,7 +396,7 @@ class TestHttpxAuthRequest:
         mock_response.headers = {"content-type": "application/json"}
         mock_response.content = b'{"access_token": "tok"}'
 
-        with patch("google_business_reviews.client.httpx.request", return_value=mock_response) as mock_request:
+        with patch("google_reviews_client.client.httpx.request", return_value=mock_response) as mock_request:
             request = _HttpxAuthRequest()
             response = request("https://oauth2.googleapis.com/token", method="POST", body=b"grant_type=refresh_token")
 
@@ -424,7 +424,7 @@ class TestHttpxAuthRequest:
         mock_response.headers = {}
         mock_response.content = b""
 
-        with patch("google_business_reviews.client.httpx.request", return_value=mock_response) as mock_request:
+        with patch("google_reviews_client.client.httpx.request", return_value=mock_response) as mock_request:
             request = _HttpxAuthRequest()
             request("https://example.com", headers={"Authorization": "Basic abc"}, timeout=30)
 

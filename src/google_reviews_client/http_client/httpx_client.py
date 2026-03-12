@@ -1,6 +1,6 @@
 import httpx
 
-from google_business_reviews.exceptions import HTTPError
+from google_reviews_client.exceptions import HTTPError
 
 from .base_client import BaseHTTPClient
 

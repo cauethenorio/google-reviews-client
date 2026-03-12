@@ -11,7 +11,7 @@ from .constants import ACCOUNT_MGMT_BASE, BUSINESS_BASE
 from .exceptions import (
     AuthenticationError,
     GoogleAPIError,
-    GoogleBusinessError,
+    GoogleReviewsError,
     HTTPError,
     NotFoundError,
     PermissionError,  # noqa: A004
@@ -67,7 +67,7 @@ def _extract_retry_after(headers: dict) -> int | None:
         return None
 
 
-def _map_status_to_exception(status_code: int, body: str, headers: dict | None = None) -> GoogleBusinessError:
+def _map_status_to_exception(status_code: int, body: str, headers: dict | None = None) -> GoogleReviewsError:
     """Map HTTP status codes to domain exceptions."""
     try:
         exc_class = _STATUS_TO_EXCEPTION.get(HTTPStatus(status_code))
@@ -81,10 +81,10 @@ def _map_status_to_exception(status_code: int, body: str, headers: dict | None =
         return exc_class(message, body=body)
     if status_code >= HTTPStatus.INTERNAL_SERVER_ERROR:
         return GoogleAPIError("Google API error", body=body)
-    return GoogleBusinessError("API request failed", body=body)
+    return GoogleReviewsError("API request failed", body=body)
 
 
-class GoogleBusinessClient:
+class GoogleReviewsClient:
     """High-level client for Google Business Profile API."""
 
     http_client_class: type[BaseHTTPClient] = HttpxHTTPClient

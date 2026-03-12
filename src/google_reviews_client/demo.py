@@ -3,15 +3,15 @@
 Usage:
     google-reviews [credentials_path] [output_path]
 
-Requires the CLI extra: pip install google-business-reviews[cli]
+Requires the CLI extra: pip install google-reviews-client[cli]
 """
 
 import json
 import sys
 from pathlib import Path
 
-from .client import GoogleBusinessClient
-from .exceptions import AuthenticationError, GoogleBusinessError
+from .client import GoogleReviewsClient
+from .exceptions import AuthenticationError, GoogleReviewsError
 
 SCOPES = ["https://www.googleapis.com/auth/business.manage"]
 DEFAULT_CREDENTIALS_PATH = "credentials.json"
@@ -26,7 +26,7 @@ def _load_credentials(credentials_path: str, tokens_path: str):
         from google.oauth2.credentials import Credentials
     except ImportError:
         print("ERROR: google-auth-oauthlib is required for the CLI.")
-        print("Install with: pip install google-business-reviews[cli]")
+        print("Install with: pip install google-reviews-client[cli]")
         sys.exit(1)
 
     # Try loading existing tokens
@@ -64,7 +64,7 @@ def _load_credentials(credentials_path: str, tokens_path: str):
         from google_auth_oauthlib.flow import InstalledAppFlow
     except ImportError:
         print("ERROR: google-auth-oauthlib is required for the CLI.")
-        print("Install with: pip install google-business-reviews[cli]")
+        print("Install with: pip install google-reviews-client[cli]")
         sys.exit(1)
 
     flow = InstalledAppFlow.from_client_secrets_file(credentials_path, scopes=SCOPES)
@@ -133,7 +133,7 @@ def main() -> None:
 
     try:
         creds = _load_credentials(credentials_path, DEFAULT_TOKENS_PATH)
-        client = GoogleBusinessClient(credentials=creds)
+        client = GoogleReviewsClient(credentials=creds)
 
         # Discover account and location
         print("Fetching accounts...")
@@ -166,7 +166,7 @@ def main() -> None:
         print("Make sure the Google Business Profile API is enabled in your project.")
         sys.exit(1)
 
-    except GoogleBusinessError as e:
+    except GoogleReviewsError as e:
         print(f"ERROR: {e}")
         if e.body:
             print(f"Details: {e.body}")

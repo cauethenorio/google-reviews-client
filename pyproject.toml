@@ -1,5 +1,5 @@
 [project]
-name = "google-business-reviews"
+name = "google-reviews-client"
 version = "0.0.1"
 description = "A lightweight Python client for Google Business Profile reviews and locations (non-official)"
 authors = [{ name = "Cauê Thenório", email = "caue@thenorio.com.br" }]
@@ -27,12 +27,12 @@ dependencies = [
 cli = ["google-auth-oauthlib>=1.0"]
 
 [project.scripts]
-google-reviews = "google_business_reviews.demo:main"
+google-reviews = "google_reviews_client.demo:main"
 
 [project.urls]
-Homepage = "https://cauethenorio.github.io/google-business-reviews/"
-Repository = "https://github.com/cauethenorio/google-business-reviews"
-Documentation = "https://cauethenorio.github.io/google-business-reviews/"
+Homepage = "https://cauethenorio.github.io/google-reviews-client/"
+Repository = "https://github.com/cauethenorio/google-reviews-client"
+Documentation = "https://cauethenorio.github.io/google-reviews-client/"
 
 [dependency-groups]
 dev = [
@@ -50,7 +50,7 @@ requires = ["uv_build>=0.9.8,<0.10.0"]
 build-backend = "uv_build"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/google_business_reviews"]
+packages = ["src/google_reviews_client"]
 
 [tool.ty.environment]
 python = "./.venv"
@@ -141,14 +141,14 @@ ignore = [
 ]
 
 [tool.ruff.lint.isort]
-    known-first-party = ["google_business_reviews"]
+    known-first-party = ["google_reviews_client"]
 
 [tool.ruff.lint.flake8-tidy-imports]
     ban-relative-imports = "parents"
 
 [tool.ruff.lint.per-file-ignores]
 "tests/*" = ["S101", "PLR2004"]
-"src/google_business_reviews/demo.py" = ["T201", "S603", "S607", "PLC0415"]
+"src/google_reviews_client/demo.py" = ["T201", "S603", "S607", "PLC0415"]
 
 [tool.ruff.format]
 preview = true

@@ -1,9 +1,9 @@
-# google-business-reviews
+# google-reviews-client
 
-[![Release](https://img.shields.io/github/v/release/cauethenorio/google-business-reviews)](https://img.shields.io/github/v/release/cauethenorio/google-business-reviews)
-[![Build status](https://img.shields.io/github/actions/workflow/status/cauethenorio/google-business-reviews/main.yml?branch=main)](https://github.com/cauethenorio/google-business-reviews/actions/workflows/main.yml?query=branch%3Amain)
-[![codecov](https://codecov.io/gh/cauethenorio/google-business-reviews/branch/main/graph/badge.svg)](https://codecov.io/gh/cauethenorio/google-business-reviews)
-[![License](https://img.shields.io/github/license/cauethenorio/google-business-reviews)](https://img.shields.io/github/license/cauethenorio/google-business-reviews)
+[![Release](https://img.shields.io/github/v/release/cauethenorio/google-reviews-client)](https://img.shields.io/github/v/release/cauethenorio/google-reviews-client)
+[![Build status](https://img.shields.io/github/actions/workflow/status/cauethenorio/google-reviews-client/main.yml?branch=main)](https://github.com/cauethenorio/google-reviews-client/actions/workflows/main.yml?query=branch%3Amain)
+[![codecov](https://codecov.io/gh/cauethenorio/google-reviews-client/branch/main/graph/badge.svg)](https://codecov.io/gh/cauethenorio/google-reviews-client)
+[![License](https://img.shields.io/github/license/cauethenorio/google-reviews-client)](https://img.shields.io/github/license/cauethenorio/google-reviews-client)
 
 A lightweight, non-official Python client for the Google Business Profile API — accounts, locations, and reviews.
 
@@ -58,19 +58,19 @@ Once your API access request is approved, you can verify it's working by running
 ## Installation
 
 ```bash
-pip install google-business-reviews
+pip install google-reviews-client
 ```
 
 Or with [uv](https://docs.astral.sh/uv/):
 
 ```bash
-uv add google-business-reviews
+uv add google-reviews-client
 ```
 
 To use the CLI demo, install with the `cli` extra:
 
 ```bash
-pip install google-business-reviews[cli]
+pip install google-reviews-client[cli]
 ```
 
 ## Quick Start
@@ -118,7 +118,7 @@ Saved to: reviews.json
 
 ```python
 from google.oauth2.credentials import Credentials
-from google_business_reviews import GoogleBusinessClient
+from google_reviews_client import GoogleReviewsClient
 
 # Create credentials (see "Authentication" section below)
 creds = Credentials(
@@ -129,7 +129,7 @@ creds = Credentials(
     client_secret="your-client-secret",
 )
 
-client = GoogleBusinessClient(credentials=creds)
+client = GoogleReviewsClient(credentials=creds)
 
 # Discover accounts and locations
 accounts = client.list_accounts()
@@ -232,8 +232,8 @@ for review in client.list_reviews(location.full_name, update_time=last_sync):
 ### Error handling
 
 ```python
-from google_business_reviews import (
-    GoogleBusinessClient,
+from google_reviews_client import (
+    GoogleReviewsClient,
     AuthenticationError,
     RateLimitError,
     NotFoundError,
@@ -284,7 +284,7 @@ with open("reviews.json", "w") as f:
 
 | Exception | Trigger |
 |-----------|---------|
-| `GoogleBusinessError` | Base exception for all library errors |
+| `GoogleReviewsError` | Base exception for all library errors |
 | `AuthenticationError` | 401 — invalid or expired credentials |
 | `PermissionError` | 403 — insufficient permissions |
 | `NotFoundError` | 404 — resource not found |

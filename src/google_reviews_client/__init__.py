@@ -1,8 +1,8 @@
-from .client import GoogleBusinessClient
+from .client import GoogleReviewsClient
 from .exceptions import (
     AuthenticationError,
     GoogleAPIError,
-    GoogleBusinessError,
+    GoogleReviewsError,
     HTTPError,
     NotFoundError,
     PermissionError,  # noqa: A004
@@ -17,8 +17,8 @@ __all__ = [
     "AuthenticationError",
     "BaseHTTPClient",
     "GoogleAPIError",
-    "GoogleBusinessClient",
-    "GoogleBusinessError",
+    "GoogleReviewsClient",
+    "GoogleReviewsError",
     "HTTPError",
     "HttpxHTTPClient",
     "Location",

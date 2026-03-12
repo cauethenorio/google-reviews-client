@@ -2,8 +2,8 @@ from unittest.mock import MagicMock, patch
 
 import httpx
 
-from google_business_reviews.exceptions import HTTPError
-from google_business_reviews.http_client.httpx_client import HttpxHTTPClient
+from google_reviews_client.exceptions import HTTPError
+from google_reviews_client.http_client.httpx_client import HttpxHTTPClient
 
 
 class TestHttpxHTTPClient:

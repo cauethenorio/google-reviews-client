@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 
-from google_business_reviews.models import Account, Location, Review, Reviewer, ReviewReply, StarRating
+from google_reviews_client.models import Account, Location, Review, Reviewer, ReviewReply, StarRating
 
 
 class TestAccountFromApiResponse:

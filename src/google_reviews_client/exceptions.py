@@ -1,20 +1,20 @@
-class GoogleBusinessError(Exception):
-    """Base exception for all google-business-reviews errors."""
+class GoogleReviewsError(Exception):
+    """Base exception for all google-reviews-client errors."""
 
     def __init__(self, message: str = "", *, body: str = ""):
         super().__init__(message)
         self.body = body
 
 
-class AuthenticationError(GoogleBusinessError):
+class AuthenticationError(GoogleReviewsError):
     """Authentication failed (401)."""
 
 
-class PermissionError(GoogleBusinessError):  # noqa: A001
+class PermissionError(GoogleReviewsError):  # noqa: A001
     """Insufficient permissions (403)."""
 
 
-class RateLimitError(GoogleBusinessError):
+class RateLimitError(GoogleReviewsError):
     """Rate limit exceeded (429)."""
 
     def __init__(self, message: str = "", *, body: str = "", retry_after: int | None = None):
@@ -22,15 +22,15 @@ class RateLimitError(GoogleBusinessError):
         self.retry_after = retry_after
 
 
-class NotFoundError(GoogleBusinessError):
+class NotFoundError(GoogleReviewsError):
     """Resource not found (404)."""
 
 
-class ValidationError(GoogleBusinessError):
+class ValidationError(GoogleReviewsError):
     """Data validation error."""
 
 
-class GoogleAPIError(GoogleBusinessError):
+class GoogleAPIError(GoogleReviewsError):
     """Google API server error (5xx)."""
 
 

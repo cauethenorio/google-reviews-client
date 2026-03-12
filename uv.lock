@@ -455,7 +455,7 @@ wheels = [
 ]
 
 [[package]]
-name = "google-business-reviews"
+name = "google-reviews-client"
 version = "0.0.1"
 source = { editable = "." }
 dependencies = [
