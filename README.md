@@ -51,7 +51,18 @@ Fill out the form with your Google Cloud project details. Approval can take a fe
 3. Choose **Desktop application** as the application type (for CLI usage) or **Web application** for server-side apps
 4. Download the JSON file and save it as `credentials.json` in your working directory
 
-### 5. Verify API access
+### 5. OAuth callback port (Web app credentials only)
+
+If you chose **Web application** in step 4, you must configure a localhost redirect URI:
+
+1. In your OAuth client settings, add `http://localhost:<port>` as an **Authorized redirect URI** (e.g., `http://localhost:8080`)
+2. The CLI auto-detects the port from your credentials file and starts the callback server on that port
+
+**Desktop app credentials** work out of the box — the redirect URI `http://localhost` is configured automatically.
+
+> **Note:** The credentials file format is shown in `credentials.example.json`. Both `installed` (Desktop) and `web` credential types are supported.
+
+### 6. Verify API access
 
 Once your API access request is approved, you can verify it's working by running the CLI demo (see [Quick Start](#quick-start) below). If you see an `AuthenticationError`, your API access may not be approved yet.
 
@@ -80,17 +91,22 @@ pip install google-reviews-client[cli]
 The CLI demo authenticates via browser-based OAuth, fetches your reviews, prints them to the terminal, and saves them as JSON.
 
 ```bash
-# Make sure credentials.json is in your current directory
+# Auto-detect credentials file in current directory
 google-reviews
+
+# Specify credentials file explicitly
+google-reviews -c /path/to/credentials.json
+
+# Custom output path
+google-reviews -o output.json
+
+# Both
+google-reviews -c /path/to/credentials.json -o output.json
 ```
+
+The CLI auto-detects credentials files in the current directory by searching for `credentials.json`, `client_secret*.json`, and `*_client_secret*.json`. If multiple files are found, use `-c` to specify which one.
 
 On first run, a browser window opens for OAuth authorization. After granting consent, tokens are saved to `tokens.json` so subsequent runs don't require re-authentication.
-
-You can also specify custom paths:
-
-```bash
-google-reviews /path/to/credentials.json /path/to/output.json
-```
 
 The CLI will prompt you to select an account and location if you have multiple, then fetch and display all reviews:
 

@@ -1,25 +1,142 @@
 """CLI demo for Google Business Reviews.
 
 Usage:
-    google-reviews [credentials_path] [output_path]
+    google-reviews                              # auto-detect credentials
+    google-reviews -c /path/to/credentials.json # explicit credentials
+    google-reviews -o output.json               # custom output path
 
 Requires the CLI extra: pip install google-reviews-client[cli]
 """
 
+import argparse
 import json
 import sys
+import urllib.parse
 from pathlib import Path
 
 from .client import GoogleReviewsClient
 from .exceptions import AuthenticationError, GoogleReviewsError
 
 SCOPES = ["https://www.googleapis.com/auth/business.manage"]
-DEFAULT_CREDENTIALS_PATH = "credentials.json"
 DEFAULT_TOKENS_PATH = "tokens.json"
 DEFAULT_OUTPUT_PATH = "reviews.json"
 
+_CREDENTIAL_GLOBS = ("credentials.json", "client_secret*.json", "*_client_secret*.json")
+_LOCALHOST_HOSTS = frozenset(("localhost", "127.0.0.1", "::1"))
+_OOB_URI = "urn:ietf:wg:oauth:2.0:oob"
 
-def _load_credentials(credentials_path: str, tokens_path: str):
+
+def _find_credentials_file() -> Path:
+    """Search cwd for a credentials file using common glob patterns.
+
+    Returns the path if exactly one match is found. Exits with an error
+    if zero or multiple matches are found.
+    """
+    cwd = Path.cwd()
+    matches: set[Path] = set()
+    for pattern in _CREDENTIAL_GLOBS:
+        matches.update(cwd.glob(pattern))
+
+    if len(matches) == 1:
+        return matches.pop()
+
+    if len(matches) == 0:
+        print("ERROR: No credentials file found in the current directory.")
+        print()
+        print("To set up credentials:")
+        print("1. Go to https://console.cloud.google.com/apis/credentials")
+        print("2. Create an OAuth 2.0 Client ID (Desktop application)")
+        print("3. Download the JSON file and save it as 'credentials.json'")
+        print()
+        print("Expected file names: credentials.json, client_secret*.json")
+        print()
+        print("You also need to request access to the Google Business Profile API:")
+        print("  https://developers.google.com/my-business/content/basic-setup")
+        sys.exit(1)
+
+    # Multiple matches
+    print("ERROR: Multiple credential files found:")
+    for path in sorted(matches):
+        print(f"  {path}")
+    print()
+    print("Specify which file to use:")
+    print("  google-reviews -c <path>")
+    sys.exit(1)
+
+
+def _parse_oauth_config(credentials_path: Path) -> int:
+    """Parse credentials JSON and extract the OAuth callback port.
+
+    Returns the port number to use for the local server. Exits with an
+    error for unsupported redirect URIs (OOB, non-localhost).
+    """
+    data = json.loads(credentials_path.read_text())
+
+    # Find the credential config (installed or web)
+    config = data.get("installed") or data.get("web")
+    if not config:
+        print("ERROR: Invalid credentials file — missing 'installed' or 'web' key.")
+        print(f"  File: {credentials_path}")
+        sys.exit(1)
+
+    credential_type = "installed" if "installed" in data else "web"
+    redirect_uris = config.get("redirect_uris", [])
+
+    # First pass: find a localhost redirect URI
+    for uri in redirect_uris:
+        parsed = urllib.parse.urlparse(uri)
+        hostname = parsed.hostname
+        if hostname in _LOCALHOST_HOSTS:
+            if parsed.port is not None:
+                return parsed.port
+            # No explicit port — infer from scheme
+            default_ports = {"http": 80, "https": 443}
+            return default_ports.get(parsed.scheme, 80)
+
+    # No localhost URI found — check for specific error cases
+    if _OOB_URI in redirect_uris:
+        print("ERROR: Your credentials use the OOB redirect flow (urn:ietf:wg:oauth:2.0:oob)")
+        print("which is no longer supported by Google.")
+        print()
+        print("To fix this:")
+        print("1. Go to APIs & Services > Credentials in the Google Cloud Console")
+        print("2. Edit your OAuth client ID")
+        print("3. Add http://localhost as an authorized redirect URI")
+        print("4. Download the updated credentials JSON")
+        sys.exit(1)
+
+    if credential_type == "web":
+        print("ERROR: Web credentials require a localhost redirect URI for the CLI.")
+        print()
+        print("To fix this:")
+        print("1. Go to APIs & Services > Credentials in the Google Cloud Console")
+        print("2. Edit your OAuth client ID")
+        print("3. Add http://localhost:<port> as an authorized redirect URI")
+        print("4. Download the updated credentials JSON")
+        sys.exit(1)
+
+    print("ERROR: No supported redirect URI found in credentials file.")
+    print(f"  File: {credentials_path}")
+    print(f"  redirect_uris: {redirect_uris}")
+    print()
+    print("Expected: http://localhost or http://localhost:<port>")
+    sys.exit(1)
+
+
+def _run_oauth_flow(credentials_path: Path, port: int):
+    """Run the OAuth installed app flow and return credentials."""
+    try:
+        from google_auth_oauthlib.flow import InstalledAppFlow
+    except ImportError:
+        print("ERROR: google-auth-oauthlib is required for the CLI.")
+        print("Install with: pip install google-reviews-client[cli]")
+        sys.exit(1)
+
+    flow = InstalledAppFlow.from_client_secrets_file(str(credentials_path), scopes=SCOPES)
+    return flow.run_local_server(port=port)
+
+
+def _load_credentials(credentials_path: Path, tokens_path: str):
     """Load credentials from token file or run OAuth flow."""
     try:
         from google.auth.transport.requests import Request
@@ -47,28 +164,8 @@ def _load_credentials(credentials_path: str, tokens_path: str):
         return creds
 
     # No tokens — run OAuth flow
-    creds_file = Path(credentials_path)
-    if not creds_file.exists():
-        print(f"ERROR: Credentials file not found: {credentials_path}")
-        print()
-        print("To set up credentials:")
-        print("1. Go to https://console.cloud.google.com/apis/credentials")
-        print("2. Create an OAuth 2.0 Client ID (Desktop application)")
-        print("3. Download the JSON file and save it as 'credentials.json'")
-        print()
-        print("You also need to request access to the Google Business Profile API:")
-        print("  https://developers.google.com/my-business/content/basic-setup")
-        sys.exit(1)
-
-    try:
-        from google_auth_oauthlib.flow import InstalledAppFlow
-    except ImportError:
-        print("ERROR: google-auth-oauthlib is required for the CLI.")
-        print("Install with: pip install google-reviews-client[cli]")
-        sys.exit(1)
-
-    flow = InstalledAppFlow.from_client_secrets_file(credentials_path, scopes=SCOPES)
-    creds = flow.run_local_server(port=0)
+    port = _parse_oauth_config(credentials_path)
+    creds = _run_oauth_flow(credentials_path, port)
     _save_tokens(creds, tokens_path)
     return creds
 
@@ -125,11 +222,46 @@ def _print_review(review) -> None:
     print()
 
 
+def _build_parser() -> argparse.ArgumentParser:
+    """Build the CLI argument parser."""
+    parser = argparse.ArgumentParser(
+        prog="google-reviews",
+        description="Fetch Google Business Profile reviews and save as JSON",
+    )
+    parser.add_argument(
+        "-c",
+        "--credentials",
+        type=Path,
+        default=None,
+        help="path to OAuth credentials JSON file (auto-detected if not specified)",
+    )
+    parser.add_argument(
+        "-o",
+        "--output",
+        type=Path,
+        default=DEFAULT_OUTPUT_PATH,
+        help=f"path for JSON output file (default: {DEFAULT_OUTPUT_PATH})",
+    )
+    return parser
+
+
 def main() -> None:
     """CLI entry point for fetching Google Business reviews."""
-    args = sys.argv[1:]
-    credentials_path = args[0] if args else DEFAULT_CREDENTIALS_PATH
-    output_path = args[1] if len(args) > 1 else DEFAULT_OUTPUT_PATH
+    parser = _build_parser()
+    args = parser.parse_args()
+
+    # Resolve credentials path
+    if args.credentials is not None:
+        credentials_path = args.credentials
+        if not credentials_path.exists():
+            print(f"ERROR: Credentials file not found: {credentials_path}")
+            print()
+            print("Check the path and try again, or omit -c to auto-detect.")
+            sys.exit(1)
+    else:
+        credentials_path = _find_credentials_file()
+
+    output_path = args.output
 
     try:
         creds = _load_credentials(credentials_path, DEFAULT_TOKENS_PATH)
@@ -152,7 +284,7 @@ def main() -> None:
             reviews_data.append(review.to_dict())
 
         # Save to JSON
-        Path(output_path).write_text(json.dumps(reviews_data, indent=2, ensure_ascii=False))
+        output_path.write_text(json.dumps(reviews_data, indent=2, ensure_ascii=False))
         print("---")
         print(f"Total reviews: {len(reviews_data)}")
         print(f"Saved to: {output_path}")
