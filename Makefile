@@ -2,14 +2,19 @@
 install: ## Install the virtual environment and install the pre-commit hooks
 	@echo "🚀 Creating virtual environment using uv"
 	@uv sync
-	@uv run pre-commit install
+	@uvx pre-commit install
+
+.PHONY: lint
+lint: ## Lint the code with ruff
+	@uv run ruff check .
+	@uv run ruff format --diff .
 
 .PHONY: check
-check: ## Run code quality tools.
+check: ## Run all code quality tools.
 	@echo "🚀 Checking lock file consistency with 'pyproject.toml'"
 	@uv lock --locked
 	@echo "🚀 Linting code: Running pre-commit"
-	@uv run pre-commit run -a
+	@uvx pre-commit run -a
 	@echo "🚀 Static type checking: Running ty"
 	@uv run ty check
 
