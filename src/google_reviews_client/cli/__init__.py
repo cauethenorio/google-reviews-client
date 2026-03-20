@@ -380,6 +380,8 @@ def main(client_secrets_file, tokens_file, user_specified_language, verbose):
         print_api_error(e, verbose=verbose)
         sys.exit(1)
 
+    logger.debug("Received %d reviews from API", len(reviews))
+
     if not reviews:
         click.echo("No new reviews found.")
         sys.exit(0)
