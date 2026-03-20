@@ -123,7 +123,9 @@ def _print_quota_error(e: RateLimitError, *, verbose: bool) -> None:
     click.echo("3. Use the email that's an owner or manager on your Business Profile\n")
     click.echo("After approval, make sure these APIs are enabled in your project:")
     click.echo("  - My Business Account Management API")
-    click.echo("  - Google My Business API\n")
+    click.echo("    https://console.cloud.google.com/apis/api/mybusinessaccountmanagement.googleapis.com")
+    click.echo("  - Google My Business API")
+    click.echo("    https://console.cloud.google.com/apis/api/mybusiness.googleapis.com\n")
     click.echo("You can check your status in Cloud Console > APIs > Quotas:")
     click.echo("  0 requests/min = pending, 300 requests/min = approved")
     if verbose:
