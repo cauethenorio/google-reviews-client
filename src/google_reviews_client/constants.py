@@ -5,7 +5,7 @@ BUSINESS_BASE = "https://mybusiness.googleapis.com/v4"
 SCOPES = [
     "https://www.googleapis.com/auth/business.manage",
     "openid",
-    "email",
+    "https://www.googleapis.com/auth/userinfo.email",
 ]
 
 # All fields available on the Location resource (Business Information API v1)
