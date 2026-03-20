@@ -81,7 +81,8 @@ def select_item(items: list, label: str, format_str: str):
 
 
 STARS_DISPLAY_WIDTH = 11  # 5 stars x 2 columns each + 1 space
-FIXED_COLS_WIDTH = 12 + STARS_DISPLAY_WIDTH + 5  # date + stars + reply
+REVIEWER_WIDTH = 20
+FIXED_COLS_WIDTH = 12 + STARS_DISPLAY_WIDTH + REVIEWER_WIDTH + 5  # date + stars + reviewer + reply
 MIN_COMMENT_WIDTH = 20
 
 
@@ -96,9 +97,8 @@ def format_stars(rating: int) -> str:
 
 def print_reviews_table_header() -> None:
     comment_width = get_comment_width()
-    # Pad "Rating" to match star display width (stars are double-width chars)
     rating_padding = " " * (STARS_DISPLAY_WIDTH - 6)  # 6 = len("Rating")
-    header = f"{'Date':<12}Rating{rating_padding}{'Review':<{comment_width}}Reply"
+    header = f"{'Date':<12}Rating{rating_padding}{'Review':<{comment_width}}{'Reviewer':<{REVIEWER_WIDTH}}Reply"
     click.echo(click.style(header, bold=True))
     click.echo("-" * (FIXED_COLS_WIDTH + comment_width))
 
@@ -110,8 +110,11 @@ def print_review_row(review) -> None:
         comment = comment[: comment_width - 3] + "..."
     date_str = review.create_time.strftime("%Y-%m-%d")
     stars = format_stars(review.rating_value)
+    reviewer = review.reviewer.display_name
+    if len(reviewer) > REVIEWER_WIDTH - 3:
+        reviewer = reviewer[: REVIEWER_WIDTH - 3] + "..."
     reply = "Yes" if review.has_reply else "No"
-    click.echo(f"{date_str:<12}{stars}{comment:<{comment_width}}{reply}")
+    click.echo(f"{date_str:<12}{stars}{comment:<{comment_width}}{reviewer:<{REVIEWER_WIDTH}}{reply}")
 
 
 def read_jsonl_metadata(path: Path) -> tuple[set[str], datetime | None]:
