@@ -28,15 +28,10 @@ from google_reviews_client.exceptions import (
 )
 
 from .auth import (
-    MultipleFilesFoundError,
-    NoFilesFoundError,
     NotInstalledAppError,
     fetch_user_info,
     find_client_secrets_files,
-    find_tokens_files,
-    load_tokens,
     run_oauth_flow,
-    save_tokens,
 )
 from .logger import add_verbose_option
 
@@ -313,37 +308,21 @@ def print_api_error(e: GoogleReviewsError, *, verbose: bool) -> None:
             logger.exception("API error details")
 
 
-def resolve_credentials(cwd: Path, tokens_file: Path | None, client_secrets_file: Path | None):
-    """Resolve credentials: try tokens first, then OAuth flow.
+def resolve_credentials(cwd: Path, client_secrets_file: Path | None):
+    """Resolve credentials: find client secrets and run OAuth flow.
 
-    If --client-secrets-file is explicitly provided, skip tokens search
-    and go straight to OAuth flow (the user wants to use that specific project).
-
-    Raises NoFilesFoundError, MultipleFilesFoundError, NotInstalledAppError.
+    Raises FileNotFoundError, ValueError, NotInstalledAppError.
     """
-    # If client-secrets-file was explicitly provided, skip tokens and run OAuth
-    if client_secrets_file is None:
-        try:
-            path = find_tokens_files(cwd, explicit_path=tokens_file)
-            return load_tokens(path)
-        except NoFilesFoundError:
-            logger.debug("No tokens files found, will try OAuth flow")
-        except MultipleFilesFoundError:
-            raise
-
-    # No tokens — run OAuth flow
     path = find_client_secrets_files(cwd, explicit_path=client_secrets_file)
     creds = run_oauth_flow(path)
 
-    # Fetch user info for greeting and email-based filename
-    email = None
+    # Fetch user info for greeting
     user_info = fetch_user_info(creds)
     if user_info:
         name, email = user_info
         display = f"{name} ({email})" if name else email
         click.echo(click.style(f"Authenticated as {display}", fg="green"))
 
-    save_tokens(cwd, creds, email=email)
     return creds
 
 
@@ -355,19 +334,13 @@ def resolve_credentials(cwd: Path, tokens_file: Path | None, client_secrets_file
     type=click.Path(exists=True, file_okay=True, readable=True, path_type=Path),
 )
 @click.option(
-    "--tokens-file",
-    help="Path to tokens JSON file from previous OAuth flow (auto-detected if not specified).",
-    default=None,
-    type=click.Path(exists=True, file_okay=True, readable=True, path_type=Path),
-)
-@click.option(
     "--language",
     "user_specified_language",
     help="Language for reviews (e.g., 'pt-BR'). Auto-detected from location if not specified.",
     default=None,
 )
 @add_verbose_option([logger, auth_logger, http_logger])
-def main(client_secrets_file, tokens_file, user_specified_language, verbose):
+def main(client_secrets_file, user_specified_language, verbose):
     """Download all your Google Business reviews."""
 
     print_banner()
@@ -375,9 +348,9 @@ def main(client_secrets_file, tokens_file, user_specified_language, verbose):
 
     # --- Resolve credentials ---
     try:
-        creds = resolve_credentials(cwd, tokens_file, client_secrets_file)
-    except NoFilesFoundError:
-        click.echo(click.style("ERROR: ", fg="red") + "No credentials or client secrets files found.\n")
+        creds = resolve_credentials(cwd, client_secrets_file)
+    except FileNotFoundError:
+        click.echo(click.style("ERROR: ", fg="red") + "No client secrets files found.\n")
         click.echo("To set up credentials:")
         click.echo("1. Go to https://console.cloud.google.com/apis/credentials")
         click.echo("2. Create an OAuth 2.0 Client ID (Desktop application)")
@@ -386,13 +359,8 @@ def main(client_secrets_file, tokens_file, user_specified_language, verbose):
         click.echo("\nYou also need to request access to the Google Business Profile API:")
         click.echo("  https://developers.google.com/my-business/content/basic-setup")
         sys.exit(1)
-    except MultipleFilesFoundError as e:
-        click.echo(click.style("ERROR: ", fg="red") + "Multiple credential files found:")
-        for path in e.files_found:
-            click.echo(f"  {click.style(str(path.relative_to(cwd)), fg='yellow')}")
-        click.echo("\nSpecify which file to use:")
-        click.echo("  google-reviews --tokens-file <path>")
-        click.echo("  google-reviews --client-secrets-file <path>")
+    except ValueError as e:
+        click.echo(click.style("ERROR: ", fg="red") + str(e))
         sys.exit(1)
     except NotInstalledAppError:
         click.echo(click.style("ERROR: ", fg="red") + "Only desktop (installed) app credentials are supported.\n")
