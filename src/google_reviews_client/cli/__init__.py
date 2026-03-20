@@ -91,7 +91,7 @@ def get_comment_width() -> int:
 
 
 def format_stars(rating: int) -> str:
-    return "\u2b50" * rating + "\u2606" * (5 - rating) + " "
+    return "\u2b50" * rating + "  " * (5 - rating) + " "
 
 
 def print_reviews_table_header() -> None:
