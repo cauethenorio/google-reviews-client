@@ -132,3 +132,15 @@ cython_debug/
 # PyPI configuration file
 .pypirc
 .planning/
+
+# Generated artifacts
+docs/plans/
+_bmad-output/
+_bmad/
+.claude/commands/bmad*
+.claude/old-bmad-commands/
+reviews*.jsonl
+reviews.json
+credentials.*.json
+*.json.old
+_tokens.json
