@@ -1,7 +1,5 @@
-import errno
 import json
 import logging
-import urllib.parse
 from pathlib import Path
 
 from google.oauth2.credentials import Credentials
@@ -13,7 +11,6 @@ logger = logging.getLogger(__name__)
 
 TOKENS_GLOBS = ("credentials.*.json",)
 CLIENT_SECRETS_GLOBS = ("client_secret*.json", "*_client_secret*.json")
-LOCALHOST_HOSTS = frozenset(("localhost", "127.0.0.1", "::1"))
 
 
 class MultipleFilesFoundError(Exception):
@@ -26,10 +23,8 @@ class NoFilesFoundError(Exception):
     pass
 
 
-class PortsAlreadyInUseError(Exception):
-    def __init__(self, failed_ports: list[int]):
-        self.failed_ports = failed_ports
-        super().__init__(f"All ports in use: {failed_ports}")
+class NotInstalledAppError(Exception):
+    pass
 
 
 def _find_files(cwd: Path, globs: tuple[str, ...], explicit_path: Path | None = None) -> Path:
@@ -76,47 +71,19 @@ def load_tokens(path: Path) -> Credentials:
     return Credentials.from_authorized_user_file(str(path), SCOPES)
 
 
-def _extract_localhost_ports(client_secrets_path: Path) -> list[int]:
-    """Extract localhost ports from client secrets redirect URIs."""
-    data = json.loads(client_secrets_path.read_text())
-    config = data.get("installed") or data.get("web") or {}
-    redirect_uris = config.get("redirect_uris", [])
-
-    ports: list[int] = []
-    for uri in redirect_uris:
-        parsed = urllib.parse.urlparse(uri)
-        if parsed.hostname in LOCALHOST_HOSTS:
-            if parsed.port is not None:
-                ports.append(parsed.port)
-            else:
-                default_ports = {"http": 80, "https": 443}
-                ports.append(default_ports.get(parsed.scheme, 80))
-    return ports
-
-
 def run_oauth_flow(client_secrets_path: Path) -> Credentials:
-    """Run OAuth installed app flow with port retry. Returns credentials."""
-    ports = _extract_localhost_ports(client_secrets_path)
+    """Run OAuth flow for an installed (desktop) app. Returns credentials.
 
-    if not ports:
-        logger.debug("No localhost ports found in redirect URIs, using default")
-        ports = [8080]
+    Uses port=0 to let the OS pick any available port.
+    Only installed (desktop) apps are supported — Google allows any localhost
+    port for installed apps per RFC 8252.
+    """
+    data = json.loads(client_secrets_path.read_text())
+    if "installed" not in data:
+        raise NotInstalledAppError()
 
     flow = InstalledAppFlow.from_client_secrets_file(str(client_secrets_path), scopes=SCOPES)
-
-    failed_ports: list[int] = []
-    for i, port in enumerate(ports):
-        try:
-            logger.debug("Starting OAuth server on port %d", port)
-            return flow.run_local_server(port=port)
-        except OSError as e:
-            if e.errno != errno.EADDRINUSE:
-                raise
-            failed_ports.append(port)
-            if i + 1 < len(ports):
-                logger.info("Port %d is in use, trying %d...", port, ports[i + 1])
-
-    raise PortsAlreadyInUseError(failed_ports=failed_ports)
+    return flow.run_local_server(port=0)
 
 
 def save_tokens(cwd: Path, creds: Credentials) -> Path:

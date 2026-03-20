@@ -21,7 +21,7 @@ from google_reviews_client.exceptions import AuthenticationError, GoogleReviewsE
 from .auth import (
     MultipleFilesFoundError,
     NoFilesFoundError,
-    PortsAlreadyInUseError,
+    NotInstalledAppError,
     find_client_secrets_files,
     find_tokens_files,
     load_tokens,
@@ -166,15 +166,13 @@ def main(client_secrets_file, tokens_file, verbose):
         click.echo("  google-reviews --tokens-file <path>")
         click.echo("  google-reviews --client-secrets-file <path>")
         sys.exit(1)
-    except PortsAlreadyInUseError as e:
-        port_list = ", ".join(str(p) for p in e.failed_ports)
-        click.echo(click.style("ERROR: ", fg="red") + "Could not start OAuth callback server.")
-        if len(e.failed_ports) == 1:
-            click.echo(f"  Port {port_list} is already in use.")
-            click.echo("  Free the port and try again.")
-        else:
-            click.echo(f"  All configured ports are in use: {port_list}")
-            click.echo("  Free one of these ports and try again.")
+    except NotInstalledAppError:
+        click.echo(click.style("ERROR: ", fg="red") + "Only desktop (installed) app credentials are supported.\n")
+        click.echo("Your client secrets file uses 'web' type credentials.")
+        click.echo("To fix this:")
+        click.echo("1. Go to https://console.cloud.google.com/apis/credentials")
+        click.echo("2. Create an OAuth 2.0 Client ID with type 'Desktop app'")
+        click.echo("3. Download the new JSON file to this directory")
         sys.exit(1)
 
     client = GoogleReviewsClient(credentials=creds)
