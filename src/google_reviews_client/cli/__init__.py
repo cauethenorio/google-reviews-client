@@ -19,6 +19,7 @@ from google_reviews_client.client import GoogleReviewsClient
 from google_reviews_client.exceptions import (
     AuthenticationError,
     GoogleReviewsError,
+    RateLimitError,
 )
 from google_reviews_client.exceptions import (
     PermissionError as APIPermissionError,
@@ -109,6 +110,24 @@ def _write_reviews_jsonl(reviews: list, path: Path, *, append: bool = False) -> 
     with path.open(mode) as f:
         for review in reviews:
             f.write(json.dumps(review.to_dict(), ensure_ascii=False) + "\n")
+
+
+def _print_quota_error(e: RateLimitError, *, verbose: bool) -> None:
+    """Print a helpful message for quota errors, which usually mean API access hasn't been approved."""
+    click.echo(click.style("\nERROR: ", fg="red") + "API quota exceeded.\n")
+    click.echo("This usually means your Google Cloud project hasn't been approved for")
+    click.echo("Business Profile API access yet.\n")
+    click.echo("To request access:")
+    click.echo("1. Go to https://support.google.com/business/contact/api_default")
+    click.echo("2. Select 'Application for Basic API Access'")
+    click.echo("3. Use the email that's an owner or manager on your Business Profile\n")
+    click.echo("After approval, make sure these APIs are enabled in your project:")
+    click.echo("  - My Business Account Management API")
+    click.echo("  - Google My Business API\n")
+    click.echo("You can check your status in Cloud Console > APIs > Quotas:")
+    click.echo("  0 requests/min = pending, 300 requests/min = approved")
+    if verbose:
+        logger.exception("Quota error details: %s", e)
 
 
 def _print_api_error(e: GoogleReviewsError, *, verbose: bool) -> None:
@@ -236,6 +255,9 @@ def main(client_secrets_file, tokens_file, verbose):
         if verbose:
             logger.exception("Authentication error details")
         sys.exit(1)
+    except RateLimitError as e:
+        _print_quota_error(e, verbose=verbose)
+        sys.exit(1)
     except APIPermissionError as e:
         _print_api_error(e, verbose=verbose)
         sys.exit(1)
@@ -254,6 +276,9 @@ def main(client_secrets_file, tokens_file, verbose):
             click.echo(click.style(f"\nFetching all reviews for {location.title}...", fg="cyan"))
 
         reviews = list(client.list_reviews(location.full_name, since=since))
+    except RateLimitError as e:
+        _print_quota_error(e, verbose=verbose)
+        sys.exit(1)
     except GoogleReviewsError as e:
         _print_api_error(e, verbose=verbose)
         sys.exit(1)
