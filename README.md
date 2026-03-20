@@ -32,7 +32,7 @@ you through everything.
 
 ### 1. Set up your Google Business Profile
 
-You need a verified business listing that's been **active for at least 60 days** before you can request API access.
+You need to be an **owner or manager** of a verified business listing that's been **active for at least 60 days** before you can request API access.
 
 **If you don't have a listing yet:**
 
