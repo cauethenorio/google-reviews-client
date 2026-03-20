@@ -142,5 +142,6 @@ _bmad/
 reviews*.jsonl
 reviews.json
 credentials.*.json
+google-reviews-config.*.json
 *.json.old
 _tokens.json
