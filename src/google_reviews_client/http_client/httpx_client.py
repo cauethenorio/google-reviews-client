@@ -13,7 +13,7 @@ class HttpxHTTPClient(BaseHTTPClient):
     """Default HTTP transport using httpx."""
 
     def __init__(self):
-        self._client = httpx.Client()
+        self._client = httpx.Client(timeout=30)
 
     def close(self) -> None:
         """Close the underlying HTTP connection pool."""
