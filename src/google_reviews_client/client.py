@@ -138,7 +138,7 @@ class GoogleReviewsClient:
             data = self._authenticated_get(url, params=params, extra_headers=extra_headers)
             for review_data in data["reviews"]:
                 review = Review.from_api_response(review_data)
-                if since is not None and review.update_time < since:
+                if since is not None and review.update_time <= since:
                     continue
                 yield review
             page_token = data.get("nextPageToken")
