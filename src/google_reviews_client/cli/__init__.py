@@ -40,6 +40,7 @@ from .logger import add_verbose_option
 
 logger = logging.getLogger(__name__)
 auth_logger = logging.getLogger("google_reviews_client.cli.auth")
+http_logger = logging.getLogger("google_reviews_client.http_client.httpx_client")
 
 
 def get_version() -> str:
@@ -223,11 +224,12 @@ def resolve_credentials(cwd: Path, tokens_file: Path | None, client_secrets_file
 )
 @click.option(
     "--language",
+    "user_specified_language",
     help="Language for reviews (e.g., 'pt-BR'). Auto-detected from location if not specified.",
     default=None,
 )
-@add_verbose_option([logger, auth_logger])
-def main(client_secrets_file, tokens_file, language, verbose):
+@add_verbose_option([logger, auth_logger, http_logger])
+def main(client_secrets_file, tokens_file, user_specified_language, verbose):
     """Download all your Google Business reviews."""
 
     print_banner()
@@ -298,20 +300,17 @@ def main(client_secrets_file, tokens_file, language, verbose):
     output_path = Path(f"reviews-{location.location_id}.jsonl")
     since = read_max_update_time(output_path) if output_path.exists() else None
 
-    try:
-        review_language = language or location.language_code
-        if review_language:
-            if language:
-                click.echo(click.style(f"\nLanguage: {review_language} (from --language flag)", dim=True))
-            else:
-                click.echo(
-                    click.style(
-                        f"\nLanguage: {review_language} (from location)."
-                        " Use --language to override if reviews are translated.",
-                        dim=True,
-                    )
-                )
+    review_language = None
+    if user_specified_language:
+        review_language = user_specified_language
+        click.echo(click.style(f"\nSelected language for reviews: {review_language} (from --language flag)", dim=True))
 
+    elif location.language:
+        review_language = location.language
+        click.echo(click.style(f"\nSelected language for reviews: {review_language} (from location).", dim=True))
+        click.echo(click.style("Use --language to override if reviews are translated.", dim=True))
+
+    try:
         if since is not None:
             click.echo(click.style(f"Syncing reviews since {since.isoformat()}...", fg="cyan"))
         else:
