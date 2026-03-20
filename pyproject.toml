@@ -21,13 +21,11 @@ classifiers = [
 dependencies = [
     "httpx>=0.24.0",
     "google-auth>=2.0",
+    "google-auth-oauthlib>=1.3.0",
 ]
 
-[project.optional-dependencies]
-cli = ["google-auth-oauthlib>=1.0"]
-
 [project.scripts]
-google-reviews = "google_reviews_client.demo:main"
+google-reviews = "google_reviews_client.cli:main"
 
 [project.urls]
 Homepage = "https://cauethenorio.github.io/google-reviews-client/"
@@ -43,6 +41,9 @@ dev = [
     "pytest-cov>=4.0.0",
     "ruff>=0.11.5",
 
+]
+download-cli = [
+    "click>=8.3.1",
 ]
 
 [build-system]
@@ -149,6 +150,7 @@ ignore = [
 [tool.ruff.lint.per-file-ignores]
 "tests/*" = ["S101", "PLR2004"]
 "src/google_reviews_client/demo.py" = ["T201", "S603", "S607", "PLC0415"]
+"src/google_reviews_client/cli/__init__.py" = ["C901", "PLR0912", "PLR0915", "PLC0415"]
 
 [tool.ruff.format]
 preview = true
