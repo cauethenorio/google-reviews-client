@@ -4,7 +4,7 @@ from unittest.mock import patch
 
 from click.testing import CliRunner
 
-from google_reviews_client.cli import main
+from google_reviews_client.cli import main, select_multiple_items
 from google_reviews_client.cli.auth import MultipleFilesFoundError, NoFilesFoundError
 
 
@@ -38,3 +38,14 @@ class TestMainMultipleFiles:
         assert result.exit_code == 1
         assert "credentials.a.json" in result.output
         assert "credentials.b.json" in result.output
+
+
+class TestSelectMultipleItems:
+    def test_auto_selects_single_item(self):
+        items = [{"name": "only"}]
+        result = select_multiple_items(items, "thing", "{0[name]}")
+        assert result == items
+
+    def test_returns_empty_for_empty_list(self):
+        result = select_multiple_items([], "thing", "{0}")
+        assert result == []

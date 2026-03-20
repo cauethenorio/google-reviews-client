@@ -81,6 +81,39 @@ def select_item(items: list, label: str, format_str: str):
         return items[choice - 1]
 
 
+def select_multiple_items(items: list, label: str, format_str: str) -> list:
+    """Let user multi-select from a list. Auto-select if only one.
+
+    Accepts comma-separated numbers or 'a' for all.
+    Returns list of selected items.
+    """
+    if not items:
+        return []
+
+    if len(items) == 1:
+        display = format_str.format(items[0])
+        click.echo(f"  Using {label}: {display}")
+        return items
+
+    click.echo(click.style(f"\nAvailable {label}s:", bold=True))
+    for i, item in enumerate(items, 1):
+        display = format_str.format(item)
+        click.echo(f"  {click.style(f'{i}.', dim=True)} {display}")
+    click.echo(f"  {click.style('a.', dim=True)} All {label}s")
+
+    while True:
+        choice = click.prompt(f"\nSelect {label}s (e.g., 1,2 or a)").strip().lower()
+        if choice == "a":
+            return list(items)
+        try:
+            indices = [int(x.strip()) - 1 for x in choice.split(",")]
+            if all(0 <= idx < len(items) for idx in indices):
+                return [items[idx] for idx in indices]
+        except ValueError:
+            pass
+        click.echo(f"Invalid choice. Enter numbers 1-{len(items)} separated by commas, or 'a' for all.")
+
+
 def display_width(text: str) -> int:
     """Return the number of terminal columns a string occupies."""
     width = 0
