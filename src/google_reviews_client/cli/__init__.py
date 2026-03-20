@@ -79,17 +79,19 @@ def select_item(items: list, label: str, format_str: str):
         return items[choice - 1]
 
 
-def print_reviews_table(reviews: list) -> None:
-    truncate = 60
+def print_reviews_table_header() -> None:
     header = f"  {'Date':<12}{'Rating':<8}{'Review':<64}{'Reply':<5}"
     click.echo(click.style(header, bold=True))
     click.echo(f"  {'-' * 87}")
-    for review in reviews:
-        date_str = review.create_time.strftime("%Y-%m-%d")
-        comment = review.comment[:truncate] + "..." if len(review.comment) > truncate else review.comment
-        reply = "Yes" if review.has_reply else "No"
-        click.echo(f"  {date_str:<12}{review.rating_value:<8}{comment:<64}{reply:<5}")
-    click.echo()
+
+
+def print_review_row(review) -> None:
+    truncate = 60
+    comment = review.comment.replace("\n", " ")
+    comment = comment[:truncate] + "..." if len(comment) > truncate else comment
+    date_str = review.create_time.strftime("%Y-%m-%d")
+    reply = "Yes" if review.has_reply else "No"
+    click.echo(f"  {date_str:<12}{review.rating_value:<8}{comment:<64}{reply:<5}")
 
 
 def read_jsonl_metadata(path: Path) -> tuple[set[str], datetime | None]:
@@ -366,13 +368,17 @@ def main(client_secrets_file, tokens_file, user_specified_language, verbose):
         click.echo(click.style(f"\nSelected language for reviews: {review_language} (from location).", dim=True))
         click.echo(click.style("Use --language to override if reviews are translated.", dim=True))
 
-    try:
-        if since is not None:
-            click.echo(click.style(f"Syncing reviews since {since.isoformat()}...", fg="cyan"))
-        else:
-            click.echo(click.style(f"Fetching all reviews for {location.title}...", fg="cyan"))
+    if since is not None:
+        click.echo(click.style(f"Syncing reviews since {since.isoformat()}...", fg="cyan"))
+    else:
+        click.echo(click.style(f"Fetching all reviews for {location.title}...", fg="cyan"))
 
-        reviews = list(client.list_reviews(location.full_name, since=since, language=review_language))
+    print_reviews_table_header()
+    reviews: list = []
+    try:
+        for review in client.list_reviews(location.full_name, since=since, language=review_language):
+            print_review_row(review)
+            reviews.append(review)
     except RateLimitError as e:
         print_quota_error(e, verbose=verbose, project_number=extract_project_number(creds.client_id))
         sys.exit(1)
@@ -383,10 +389,10 @@ def main(client_secrets_file, tokens_file, user_specified_language, verbose):
     logger.debug("Received %d reviews from API", len(reviews))
 
     if not reviews:
-        click.echo("No new reviews found.")
+        click.echo("  (no new reviews)")
         sys.exit(0)
 
-    print_reviews_table(reviews)
+    click.echo()
 
     if since is not None:
         new_count, updated_count = sync_reviews_jsonl(reviews, output_path, existing_ids)
