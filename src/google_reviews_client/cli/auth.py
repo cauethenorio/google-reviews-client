@@ -2,6 +2,7 @@ import json
 import logging
 from pathlib import Path
 
+import httpx
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
 
@@ -86,9 +87,34 @@ def run_oauth_flow(client_secrets_path: Path) -> Credentials:
     return flow.run_local_server(port=0)
 
 
-def save_tokens(cwd: Path, creds: Credentials) -> Path:
-    """Save credentials to a tokens file. Returns the path written."""
-    suffix = creds.client_id.split(".")[0] if creds.client_id else "default"
+USERINFO_URL = "https://www.googleapis.com/oauth2/v3/userinfo"
+
+
+def fetch_user_info(creds: Credentials) -> tuple[str, str] | None:
+    """Fetch the authenticated user's name and email from Google.
+
+    Returns (name, email) or None if the userinfo endpoint is unavailable
+    (e.g., old tokens without openid/email scopes).
+    """
+    try:
+        resp = httpx.get(USERINFO_URL, headers={"Authorization": f"Bearer {creds.token}"})
+        if not resp.is_success:
+            logger.debug("Userinfo request failed with status %d", resp.status_code)
+            return None
+        data = resp.json()
+        return data.get("name", ""), data.get("email", "")
+    except httpx.HTTPError:
+        logger.debug("Userinfo request failed", exc_info=True)
+        return None
+
+
+def save_tokens(cwd: Path, creds: Credentials, *, email: str | None = None) -> Path:
+    """Save credentials to a tokens file. Returns the path written.
+
+    If email is provided, uses it as the filename suffix (lowercased).
+    Otherwise falls back to the client_id prefix.
+    """
+    suffix = email.lower() if email else (creds.client_id.split(".")[0] if creds.client_id else "default")
     filename = f"credentials.{suffix}.json"
     filepath = cwd / filename
     filepath.write_text(creds.to_json())

@@ -28,6 +28,7 @@ from .auth import (
     MultipleFilesFoundError,
     NoFilesFoundError,
     NotInstalledAppError,
+    fetch_user_info,
     find_client_secrets_files,
     find_tokens_files,
     load_tokens,
@@ -153,7 +154,16 @@ def _resolve_credentials(cwd: Path, tokens_file: Path | None, client_secrets_fil
     # No tokens — run OAuth flow
     path = find_client_secrets_files(cwd, explicit_path=client_secrets_file)
     creds = run_oauth_flow(path)
-    save_tokens(cwd, creds)
+
+    # Fetch user info for greeting and email-based filename
+    email = None
+    user_info = fetch_user_info(creds)
+    if user_info:
+        name, email = user_info
+        display = f"{name} ({email})" if name else email
+        click.echo(click.style(f"Authenticated as {display}", fg="green"))
+
+    save_tokens(cwd, creds, email=email)
     return creds
 
 
