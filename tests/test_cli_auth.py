@@ -1,6 +1,6 @@
 import pytest
 
-from google_reviews_client.cli.auth import find_client_secrets_files
+from google_reviews_client.cli.auth import MultipleFilesFoundError, find_client_secrets_files
 
 
 @pytest.fixture
@@ -33,5 +33,6 @@ class TestFindClientSecretsFiles:
     def test_auto_detect_multiple(self, tmp_cwd):
         (tmp_cwd / "client_secret_a.json").write_text("{}")
         (tmp_cwd / "client_secret_b.json").write_text("{}")
-        with pytest.raises(ValueError, match="Multiple"):
+        with pytest.raises(MultipleFilesFoundError) as exc_info:
             find_client_secrets_files(tmp_cwd)
+        assert len(exc_info.value.files_found) == 2

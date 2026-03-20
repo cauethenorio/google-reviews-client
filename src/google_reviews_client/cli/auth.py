@@ -15,6 +15,12 @@ CLIENT_SECRETS_GLOBS = ("client_secret*.json", "*_client_secret*.json")
 USERINFO_URL = "https://www.googleapis.com/oauth2/v3/userinfo"
 
 
+class MultipleFilesFoundError(Exception):
+    def __init__(self, files_found: list[Path]):
+        self.files_found = files_found
+        super().__init__(f"Multiple files found: {files_found}")
+
+
 class NotInstalledAppError(Exception):
     pass
 
@@ -46,9 +52,7 @@ def find_client_secrets_files(cwd: Path, explicit_path: Path | None = None) -> P
         msg = "No client secrets files found. Expected: client_secret*.json"
         raise FileNotFoundError(msg)
 
-    files_str = ", ".join(str(p.name) for p in sorted(matches))
-    msg = f"Multiple client secrets files found: {files_str}. Use --client-secrets-file to specify."
-    raise ValueError(msg)
+    raise MultipleFilesFoundError(files_found=sorted(matches))
 
 
 def run_oauth_flow(client_secrets_path: Path) -> Credentials:

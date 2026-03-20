@@ -26,6 +26,7 @@ from google_reviews_client.exceptions import (
 )
 
 from .auth import (
+    MultipleFilesFoundError,
     NotInstalledAppError,
     credentials_from_config_data,
     credentials_to_config_data,
@@ -438,6 +439,13 @@ def main(client_secrets_file, config_file, user_specified_language, verbose):
             click.echo("1. Go to https://console.cloud.google.com/apis/credentials")
             click.echo("2. Create an OAuth 2.0 Client ID (Desktop application)")
             click.echo("3. Download the JSON file to this directory")
+            sys.exit(1)
+        except MultipleFilesFoundError as e:
+            click.echo(click.style("ERROR: ", fg="red") + "Multiple client secrets files found:")
+            for path in e.files_found:
+                click.echo(f"  {click.style(path.name, fg='yellow')}")
+            click.echo("\nSpecify which file to use:")
+            click.echo("  google-reviews --client-secrets-file <path>")
             sys.exit(1)
         except NotInstalledAppError:
             click.echo(click.style("ERROR: ", fg="red") + "Only desktop (installed) app credentials are supported.\n")
