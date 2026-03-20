@@ -9,6 +9,7 @@ Usage:
 
 import json
 import logging
+import shutil
 import sys
 from datetime import datetime
 from pathlib import Path
@@ -84,7 +85,7 @@ MIN_COMMENT_WIDTH = 20
 
 
 def get_comment_width() -> int:
-    term_width = click.get_terminal_size()[0]
+    term_width = shutil.get_terminal_size().columns
     return max(term_width - FIXED_COLS_WIDTH, MIN_COMMENT_WIDTH)
 
 
