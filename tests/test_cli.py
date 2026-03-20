@@ -11,7 +11,10 @@ class TestMainBanner:
     def test_banner_shows_version_and_directory(self, tmp_path, monkeypatch):
         monkeypatch.chdir(tmp_path)
         runner = CliRunner()
-        with patch("google_reviews_client.cli.resolve_credentials", side_effect=FileNotFoundError):
+        with (
+            patch("google_reviews_client.cli.find_config_files", return_value=[]),
+            patch("google_reviews_client.cli.first_time_setup", side_effect=FileNotFoundError("No files")),
+        ):
             result = runner.invoke(main)
         assert "google-reviews-client" in result.output
         assert str(tmp_path) in result.output
@@ -21,25 +24,13 @@ class TestMainNoCredentials:
     def test_no_files_shows_setup_guide(self, tmp_path, monkeypatch):
         monkeypatch.chdir(tmp_path)
         runner = CliRunner()
-        with patch("google_reviews_client.cli.resolve_credentials", side_effect=FileNotFoundError):
-            result = runner.invoke(main)
-        assert result.exit_code == 1
-        assert "console.cloud.google.com" in result.output
-
-
-class TestMainMultipleFiles:
-    def test_multiple_files_shows_error(self, tmp_path, monkeypatch):
-        monkeypatch.chdir(tmp_path)
-        runner = CliRunner()
-        with patch(
-            "google_reviews_client.cli.resolve_credentials",
-            side_effect=ValueError(
-                "Multiple client secrets files found: a.json, b.json. Use --client-secrets-file to specify."
-            ),
+        with (
+            patch("google_reviews_client.cli.find_config_files", return_value=[]),
+            patch("google_reviews_client.cli.first_time_setup", side_effect=FileNotFoundError("No files")),
         ):
             result = runner.invoke(main)
         assert result.exit_code == 1
-        assert "Multiple" in result.output
+        assert "console.cloud.google.com" in result.output
 
 
 class TestSelectMultipleItems:

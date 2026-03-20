@@ -1,9 +1,10 @@
 """CLI for Google Reviews Client.
 
 Usage:
-    google-reviews                                    # auto-detect credentials
-    google-reviews --client-secrets-file /path/to/secrets.json
-    google-reviews --tokens-file /path/to/tokens.json
+    google-reviews                                    # auto-discover configs or first-time setup
+    google-reviews --config-file /path/to/config.json # use a specific config
+    google-reviews --client-secrets-file /path/to/secrets.json  # first-time setup
+    google-reviews --language pt-BR                   # override review language
     google-reviews -v                                 # verbose mode
 """
 
@@ -23,21 +24,28 @@ from google_reviews_client.exceptions import (
     GoogleReviewsError,
     RateLimitError,
 )
-from google_reviews_client.exceptions import (
-    PermissionError as APIPermissionError,
-)
 
 from .auth import (
     NotInstalledAppError,
+    credentials_from_config_data,
+    credentials_to_config_data,
     fetch_user_info,
     find_client_secrets_files,
     run_oauth_flow,
+)
+from .config import (
+    Config,
+    build_config_path,
+    find_config_files,
+    load_config,
+    save_config,
 )
 from .logger import add_verbose_option
 
 logger = logging.getLogger(__name__)
 auth_logger = logging.getLogger("google_reviews_client.cli.auth")
 http_logger = logging.getLogger("google_reviews_client.http_client.httpx_client")
+config_logger = logging.getLogger("google_reviews_client.cli.config")
 
 
 def get_version() -> str:
@@ -53,27 +61,6 @@ def print_banner() -> None:
     click.echo(click.style(f"google-reviews-client v{get_version()}", bold=True))
     click.echo(click.style(f"Directory: {Path.cwd()}", dim=True))
     click.echo()
-
-
-def select_item(items: list, label: str, format_str: str):
-    """Let user select from a list, auto-select if only one."""
-    if not items:
-        click.echo(click.style(f"No {label}s found.", fg="red"))
-        sys.exit(1)
-
-    if len(items) == 1:
-        display = format_str.format(items[0])
-        click.echo(f"  Using {label}: {display}")
-        return items[0]
-
-    click.echo(click.style(f"\nAvailable {label}s:", bold=True))
-    for i, item in enumerate(items, 1):
-        display = format_str.format(item)
-        click.echo(f"  {click.style(f'{i}.', dim=True)} {display}")
-
-    while True:
-        choice = click.prompt(f"\nSelect {label}", type=click.IntRange(1, len(items)))
-        return items[choice - 1]
 
 
 def select_multiple_items(items: list, label: str, format_str: str) -> list:
@@ -308,146 +295,97 @@ def print_api_error(e: GoogleReviewsError, *, verbose: bool) -> None:
             logger.exception("API error details")
 
 
-def resolve_credentials(cwd: Path, client_secrets_file: Path | None):
-    """Resolve credentials: find client secrets and run OAuth flow.
-
-    Raises FileNotFoundError, ValueError, NotInstalledAppError.
-    """
+def first_time_setup(cwd: Path, client_secrets_file: Path | None) -> Config:
+    """Run OAuth flow, prompt for accounts/locations, create config file."""
     path = find_client_secrets_files(cwd, explicit_path=client_secrets_file)
     creds = run_oauth_flow(path)
 
-    # Fetch user info for greeting
     user_info = fetch_user_info(creds)
     if user_info:
         name, email = user_info
         display = f"{name} ({email})" if name else email
         click.echo(click.style(f"Authenticated as {display}", fg="green"))
+    else:
+        email = click.prompt("Enter your email (for config filename)")
 
-    return creds
-
-
-@click.command(context_settings={"help_option_names": ["-h", "--help"]})
-@click.option(
-    "--client-secrets-file",
-    help="Path to OAuth client secrets JSON file (auto-detected if not specified).",
-    default=None,
-    type=click.Path(exists=True, file_okay=True, readable=True, path_type=Path),
-)
-@click.option(
-    "--language",
-    "user_specified_language",
-    help="Language for reviews (e.g., 'pt-BR'). Auto-detected from location if not specified.",
-    default=None,
-)
-@add_verbose_option([logger, auth_logger, http_logger])
-def main(client_secrets_file, user_specified_language, verbose):
-    """Download all your Google Business reviews."""
-
-    print_banner()
-    cwd = Path.cwd()
-
-    # --- Resolve credentials ---
-    try:
-        creds = resolve_credentials(cwd, client_secrets_file)
-    except FileNotFoundError:
-        click.echo(click.style("ERROR: ", fg="red") + "No client secrets files found.\n")
-        click.echo("To set up credentials:")
-        click.echo("1. Go to https://console.cloud.google.com/apis/credentials")
-        click.echo("2. Create an OAuth 2.0 Client ID (Desktop application)")
-        click.echo("3. Download the JSON file to this directory\n")
-        click.echo("Expected file names: client_secret*.json")
-        click.echo("\nYou also need to request access to the Google Business Profile API:")
-        click.echo("  https://developers.google.com/my-business/content/basic-setup")
-        sys.exit(1)
-    except ValueError as e:
-        click.echo(click.style("ERROR: ", fg="red") + str(e))
-        sys.exit(1)
-    except NotInstalledAppError:
-        click.echo(click.style("ERROR: ", fg="red") + "Only desktop (installed) app credentials are supported.\n")
-        click.echo("Your client secrets file uses 'web' type credentials.")
-        click.echo("To fix this:")
-        click.echo("1. Go to https://console.cloud.google.com/apis/credentials")
-        click.echo("2. Create an OAuth 2.0 Client ID with type 'Desktop app'")
-        click.echo("3. Download the new JSON file to this directory")
-        sys.exit(1)
-
+    project_number = extract_project_number(creds.client_id) or "default"
     client = GoogleReviewsClient(credentials=creds)
 
-    # --- Fetch accounts and locations ---
-    try:
-        click.echo()
-        click.echo(click.style("Fetching accounts...", fg="cyan"))
-        accounts = client.list_accounts()
-        account = select_item(accounts, "account", "{0.name} | {0.account_name}")
+    click.echo()
+    click.echo(click.style("Fetching accounts...", fg="cyan"))
+    accounts = client.list_accounts()
+    selected_accounts = select_multiple_items(accounts, "account", "{0.name} | {0.account_name}")
 
+    targets = []
+    for account in selected_accounts:
         click.echo()
-        click.echo(click.style("Fetching locations...", fg="cyan"))
+        click.echo(click.style(f"Fetching locations for {account.account_name}...", fg="cyan"))
         locations = client.list_locations(account.name)
-        location = select_item(locations, "location", "{0.name} | {0.title}")
-    except AuthenticationError:
-        click.echo(click.style("\nERROR: ", fg="red") + "Authentication failed.\n")
-        click.echo("Your API access may not be approved. To request access:")
-        click.echo("  https://developers.google.com/my-business/content/basic-setup\n")
-        click.echo("Make sure the Google Business Profile API is enabled in your project.")
-        if verbose:
-            logger.exception("Authentication error details")
-        sys.exit(1)
-    except RateLimitError as e:
-        print_quota_error(e, verbose=verbose, project_number=extract_project_number(creds.client_id))
-        sys.exit(1)
-    except APIPermissionError as e:
-        print_api_error(e, verbose=verbose)
-        sys.exit(1)
-    except GoogleReviewsError as e:
-        print_api_error(e, verbose=verbose)
-        sys.exit(1)
+        selected_locations = select_multiple_items(locations, "location", "{0.name} | {0.title}")
 
-    # --- Fetch and save reviews ---
-    output_path = Path(f"reviews-{location.location_id}.jsonl")
+        target = {
+            "account": account.name,
+            "account_name": account.account_name,
+            "locations": [{"location": loc.name, "title": loc.title} for loc in selected_locations],
+        }
+        targets.append(target)
+
+    config = Config(
+        path=build_config_path(cwd, project_number, email),
+        credentials_data=credentials_to_config_data(creds),
+        targets=targets,
+    )
+    save_config(config)
+    return config
+
+
+def sync_target(
+    client: GoogleReviewsClient,
+    account_name: str,
+    location_data: dict,
+    user_specified_language: str | None,
+    *,
+    verbose: bool,  # noqa: ARG001
+) -> None:
+    """Sync reviews for a single location target."""
+    location_id = location_data["location"].split("/")[-1]
+    location_title = location_data.get("title", location_data["location"])
+    full_name = location_data["location"]
+
+    click.echo()
+    click.echo(click.style(f"{account_name} > {location_title}", bold=True))
+
+    output_path = Path(f"reviews-{location_id}.jsonl")
     existing_ids: set[str] = set()
     since: datetime | None = None
     if output_path.exists():
         existing_ids, since = read_jsonl_metadata(output_path)
 
-    review_language = None
-    if user_specified_language:
-        review_language = user_specified_language
-        click.echo(click.style(f"\nSelected language for reviews: {review_language} (from --language flag)", dim=True))
-
-    elif location.language:
-        review_language = location.language
-        click.echo(click.style(f"\nSelected language for reviews: {review_language} (from location).", dim=True))
-        click.echo(click.style("Use --language to override if reviews are translated.", dim=True))
+    review_language = user_specified_language or location_data.get("language")
+    if review_language:
+        logger.debug("Using language: %s", review_language)
 
     if since is not None:
         click.echo(click.style(f"Syncing reviews since {since.isoformat()}...", fg="cyan"))
     else:
-        click.echo(click.style(f"Fetching all reviews for {location.title}...", fg="cyan"))
+        click.echo(click.style("Fetching all reviews...", fg="cyan"))
 
     print_reviews_table_header()
     reviews: list = []
-    try:
-        for review in client.list_reviews(location.full_name, since=since, language=review_language):
-            print_review_row(review)
-            reviews.append(review)
-    except RateLimitError as e:
-        print_quota_error(e, verbose=verbose, project_number=extract_project_number(creds.client_id))
-        sys.exit(1)
-    except GoogleReviewsError as e:
-        print_api_error(e, verbose=verbose)
-        sys.exit(1)
+    for review in client.list_reviews(full_name, since=since, language=review_language):
+        print_review_row(review)
+        reviews.append(review)
 
     logger.debug("Received %d reviews from API", len(reviews))
 
     if not reviews:
         click.echo("  (no new reviews)")
-        sys.exit(0)
+        return
 
     click.echo()
 
     if since is not None:
         new_count, updated_count = sync_reviews_jsonl(reviews, output_path, existing_ids)
-        click.echo()
         parts = []
         if new_count:
             parts.append(f"{new_count} new")
@@ -456,5 +394,124 @@ def main(client_secrets_file, user_specified_language, verbose):
         click.echo(click.style("Done! ", fg="green") + f"{' and '.join(parts)} reviews saved to {output_path}")
     else:
         write_reviews_jsonl(reviews, output_path)
-        click.echo()
         click.echo(click.style("Done! ", fg="green") + f"{len(reviews)} reviews saved to {output_path}")
+
+    if user_specified_language and user_specified_language != location_data.get("language"):
+        location_data["language"] = user_specified_language
+
+
+@click.command(context_settings={"help_option_names": ["-h", "--help"]})
+@click.option(
+    "--client-secrets-file",
+    help="Path to OAuth client secrets JSON file (for first-time setup).",
+    default=None,
+    type=click.Path(exists=True, file_okay=True, readable=True, path_type=Path),
+)
+@click.option(
+    "--config-file",
+    help="Path to a specific config file to use.",
+    default=None,
+    type=click.Path(exists=True, file_okay=True, readable=True, path_type=Path),
+)
+@click.option(
+    "--language",
+    "user_specified_language",
+    help="Language for reviews (e.g., 'pt-BR'). Saved per-location in config.",
+    default=None,
+)
+@add_verbose_option([logger, auth_logger, http_logger, config_logger])
+def main(client_secrets_file, config_file, user_specified_language, verbose):
+    """Download all your Google Business reviews."""
+
+    print_banner()
+    cwd = Path.cwd()
+
+    # --- Find or create config files ---
+    config_files = find_config_files(cwd, explicit_path=config_file)
+
+    if not config_files:
+        try:
+            config = first_time_setup(cwd, client_secrets_file)
+        except FileNotFoundError as e:
+            click.echo(click.style("ERROR: ", fg="red") + str(e) + "\n")
+            click.echo("To set up credentials:")
+            click.echo("1. Go to https://console.cloud.google.com/apis/credentials")
+            click.echo("2. Create an OAuth 2.0 Client ID (Desktop application)")
+            click.echo("3. Download the JSON file to this directory")
+            sys.exit(1)
+        except NotInstalledAppError:
+            click.echo(click.style("ERROR: ", fg="red") + "Only desktop (installed) app credentials are supported.\n")
+            click.echo("Your client secrets file uses 'web' type credentials.")
+            click.echo("To fix this:")
+            click.echo("1. Go to https://console.cloud.google.com/apis/credentials")
+            click.echo("2. Create an OAuth 2.0 Client ID with type 'Desktop app'")
+            click.echo("3. Download the new JSON file to this directory")
+            sys.exit(1)
+        configs = [config]
+    else:
+        configs = [load_config(path) for path in config_files]
+
+    # --- Process each config ---
+    for config in configs:
+        click.echo(click.style(f"\nUsing config: {config.path.name}", dim=True))
+
+        try:
+            creds = credentials_from_config_data(config.credentials_data)
+        except Exception:
+            click.echo(click.style("ERROR: ", fg="red") + f"Invalid credentials in {config.path.name}")
+            click.echo("Delete this config file and re-run to re-authenticate.")
+            if verbose:
+                logger.exception("Credentials error")
+            continue
+
+        if creds.expired and creds.refresh_token:
+            from google.auth.transport.requests import Request
+
+            try:
+                creds.refresh(Request())
+                config.credentials_data = credentials_to_config_data(creds)
+                save_config(config)
+            except Exception:
+                click.echo(click.style("ERROR: ", fg="red") + f"Failed to refresh credentials in {config.path.name}")
+                click.echo("Delete this config file and re-run to re-authenticate.")
+                if verbose:
+                    logger.exception("Refresh error")
+                continue
+
+        if not config.targets:
+            click.echo("No targets configured. Fetching accounts...")
+            client = GoogleReviewsClient(credentials=creds)
+            accounts = client.list_accounts()
+            selected_accounts = select_multiple_items(accounts, "account", "{0.name} | {0.account_name}")
+
+            for account in selected_accounts:
+                click.echo(click.style(f"Fetching locations for {account.account_name}...", fg="cyan"))
+                locations = client.list_locations(account.name)
+                selected_locations = select_multiple_items(locations, "location", "{0.name} | {0.title}")
+
+                config.targets.append({
+                    "account": account.name,
+                    "account_name": account.account_name,
+                    "locations": [{"location": loc.name, "title": loc.title} for loc in selected_locations],
+                })
+            save_config(config)
+
+        client = GoogleReviewsClient(credentials=creds)
+
+        for target in config.targets:
+            account_name = target.get("account_name", target["account"])
+            for location_data in target.get("locations", []):
+                try:
+                    sync_target(client, account_name, location_data, user_specified_language, verbose=verbose)
+                except RateLimitError as e:
+                    print_quota_error(e, verbose=verbose, project_number=extract_project_number(creds.client_id))
+                except AuthenticationError:
+                    click.echo(click.style("\nERROR: ", fg="red") + "Authentication failed.")
+                    click.echo("Your API access may not be approved.")
+                    if verbose:
+                        logger.exception("Authentication error")
+                    break
+                except GoogleReviewsError as e:
+                    print_api_error(e, verbose=verbose)
+
+        save_config(config)
