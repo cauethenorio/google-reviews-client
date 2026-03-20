@@ -109,6 +109,7 @@ def read_jsonl_metadata(path: Path) -> tuple[set[str], datetime | None]:
             ut = datetime.fromisoformat(review_dict["update_time"])
             if max_update_time is None or ut > max_update_time:
                 max_update_time = ut
+    logger.debug("Existing JSONL: %d reviews, latest update: %s", len(review_ids), max_update_time)
     return review_ids, max_update_time
 
 
@@ -129,6 +130,14 @@ def sync_reviews_jsonl(reviews: list, path: Path, existing_ids: set[str]) -> tup
     """
     new_reviews = [r for r in reviews if r.review_id not in existing_ids]
     updated_reviews = {r.review_id: r for r in reviews if r.review_id in existing_ids}
+
+    logger.debug(
+        "Sync: %d fetched, %d new, %d updated, %d unchanged",
+        len(reviews),
+        len(new_reviews),
+        len(updated_reviews),
+        len(reviews) - len(new_reviews) - len(updated_reviews),
+    )
 
     if updated_reviews:
         # Stream original to temp, replacing updated lines
