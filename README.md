@@ -130,49 +130,80 @@ The CLI authenticates via browser-based OAuth, fetches your reviews, prints them
 JSONL.
 
 ```bash
-# Auto-detect client secrets file in current directory
+# First run — auto-detect client secrets, run OAuth, select accounts/locations
 google-reviews
 
-# Specify client secrets file explicitly
+# Subsequent runs — auto-sync all saved targets
+google-reviews
+
+# Specify client secrets file for first-time setup
 google-reviews --client-secrets-file /path/to/client_secret.json
 
-# Use a specific tokens file (from a previous OAuth flow)
-google-reviews --tokens-file /path/to/credentials.user@gmail.com.json
+# Use a specific config file
+google-reviews --config-file google-reviews-config.123.user@gmail.com.json
 
-# Verbose mode - shows file search details and full error tracebacks
+# Set language for reviews (saved per-location in config)
+google-reviews --language pt-BR
+
+# Verbose mode — shows file search details and full error tracebacks
 google-reviews -v
 ```
 
-On first run, a browser window opens for Google OAuth. After granting consent, the CLI saves your tokens locally (e.g.,
-`credentials.user@gmail.com.json`) so subsequent runs don't require re-authentication.
+#### First run
 
-You can authenticate multiple Google accounts - each gets its own tokens file. If the CLI finds multiple tokens files,
-it will ask you to specify which one to use.
+On first run, a browser window opens for Google OAuth. After granting consent, the CLI prompts you to select accounts
+and locations, then creates a config file (e.g., `google-reviews-config.76944426795.user@gmail.com.json`) with your
+credentials and selections.
 
-The CLI will prompt you to select an account and location if you have multiple, then fetch and display all reviews:
+You can select multiple accounts and locations — the CLI will sync all of them on each run.
+
+#### Subsequent runs
+
+On subsequent runs, the CLI auto-detects config files in the current directory and syncs all configured targets:
 
 ```
 google-reviews-client v0.1.0
 Directory: /Users/you/reviews
 
-Authenticated as Jane Smith (jane@example.com)
-Tokens saved to credentials.jane@example.com.json
-Fetching accounts...
-  Using account: accounts/123 | Jane's Business
-Fetching locations...
-  Using location: locations/456 | My Coffee Shop
+Using config: google-reviews-config.76944426795.user@gmail.com.json
 
-Fetching all reviews for My Coffee Shop...
-  Date        Rating  Review                                                          Reply
-  ---------------------------------------------------------------------------------------
-  2024-01-15  5       Great service and friendly staff!                                No
-  2024-01-10  3       Average experience, could be better.                             Yes
+My Business > My Coffee Shop
+Syncing reviews since 2024-01-15T00:00:00...
+Date        Rating     Review                                    Reviewer            Replied
+------------------------------------------------------------------------------------------
+2024-01-20  ⭐⭐⭐⭐⭐    Amazing coffee!                           John D.             No
 
-Done! 2 reviews saved to reviews-456.jsonl
+Done! 1 new reviews saved to reviews-456.jsonl
 ```
 
-On subsequent runs, if a `reviews-{location_id}.jsonl` file already exists, the CLI automatically syncs - fetching only
-new or updated reviews and appending them to the file.
+#### Config file
+
+The config file stores your OAuth credentials and selected accounts/locations:
+
+```json
+{
+  "credentials": { "..." },
+  "targets": [
+    {
+      "account": "accounts/123",
+      "account_name": "My Business",
+      "locations": [
+        {
+          "location": "locations/456",
+          "title": "My Coffee Shop",
+          "language": "pt-BR"
+        }
+      ]
+    }
+  ]
+}
+```
+
+To change your selections, edit the config file:
+- **Remove a location** from `locations` to stop syncing it
+- **Remove all targets** to be prompted again on next run
+- **Remove `language`** from a location to use the default
+- **Delete the config file** entirely to start fresh (re-authenticate and re-select)
 
 ### Programmatic Usage
 
