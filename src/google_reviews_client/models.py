@@ -138,6 +138,7 @@ class Location:
     account_id: str
     title: str | None = None
     store_code: str | None = None
+    language_code: str | None = None
 
     @property
     def full_name(self) -> str:
@@ -163,6 +164,7 @@ class Location:
             account_id=account_id,
             title=data.get("title"),
             store_code=data.get("storeCode"),
+            language_code=data.get("languageCode"),
         )
 
 

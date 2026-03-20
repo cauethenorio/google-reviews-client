@@ -7,7 +7,7 @@ import google.auth.credentials
 import google.auth.transport
 import httpx
 
-from .constants import ACCOUNT_MGMT_BASE, BUSINESS_BASE
+from .constants import ACCOUNT_MGMT_BASE, BUSINESS_BASE, LOCATION_ALL_FIELDS
 from .exceptions import (
     AuthenticationError,
     GoogleAPIError,
@@ -93,15 +93,14 @@ class GoogleReviewsClient:
         self.credentials = credentials
         self.http_client = self.http_client_class()
 
-    def _authenticated_get(self, url: str, params: dict | None = None) -> dict:
+    def _authenticated_get(
+        self, url: str, params: dict | None = None, extra_headers: dict[str, str] | None = None
+    ) -> dict:
         """Make an authenticated GET request with automatic error mapping."""
         headers: dict[str, str] = {}
-        self.credentials.before_request(
-            request=_HttpxAuthRequest(),
-            method="GET",
-            url=url,
-            headers=headers,
-        )
+        if extra_headers:
+            headers.update(extra_headers)
+        self.credentials.before_request(request=_HttpxAuthRequest(), method="GET", url=url, headers=headers)
         try:
             return self.http_client.get(url, params=params, headers=headers)
         except HTTPError as e:
@@ -109,23 +108,37 @@ class GoogleReviewsClient:
 
     def list_accounts(self) -> list[Account]:
         data = self._authenticated_get(f"{ACCOUNT_MGMT_BASE}/v1/accounts")
-        return [Account.from_api_response(acc) for acc in data.get("accounts", [])]
+        return [Account.from_api_response(acc) for acc in data["accounts"]]
 
     def list_locations(self, account: str) -> list[Location]:
-        data = self._authenticated_get(f"{ACCOUNT_MGMT_BASE}/v1/{account}/locations")
-        return [Location.from_api_response(loc, account=account) for loc in data.get("locations", [])]
+        data = self._authenticated_get(
+            f"{ACCOUNT_MGMT_BASE}/v1/{account}/locations",
+            params={"readMask": LOCATION_ALL_FIELDS},
+        )
+        return [Location.from_api_response(loc, account=account) for loc in data["locations"]]
 
-    def list_reviews(self, location: str, *, update_time: datetime | None = None) -> Iterator[Review]:
+    def list_reviews(
+        self,
+        location: str,
+        *,
+        since: datetime | None = None,
+        order_by: str | None = None,
+        language: str | None = None,
+    ) -> Iterator[Review]:
         url = f"{BUSINESS_BASE}/{location}/reviews"
         page_token = None
+        extra_headers = {"Accept-Language": language} if language else None
+
         while True:
             params: dict[str, str] = {}
             if page_token:
                 params["pageToken"] = page_token
-            data = self._authenticated_get(url, params=params)
-            for review_data in data.get("reviews", []):
+            if order_by is not None:
+                params["orderBy"] = order_by
+            data = self._authenticated_get(url, params=params, extra_headers=extra_headers)
+            for review_data in data["reviews"]:
                 review = Review.from_api_response(review_data)
-                if update_time is not None and review.update_time < update_time:
+                if since is not None and review.update_time < since:
                     continue
                 yield review
             page_token = data.get("nextPageToken")

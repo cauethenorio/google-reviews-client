@@ -221,8 +221,13 @@ def resolve_credentials(cwd: Path, tokens_file: Path | None, client_secrets_file
     default=None,
     type=click.Path(exists=True, file_okay=True, readable=True, path_type=Path),
 )
+@click.option(
+    "--language",
+    help="Language for reviews (e.g., 'pt-BR'). Auto-detected from location if not specified.",
+    default=None,
+)
 @add_verbose_option([logger, auth_logger])
-def main(client_secrets_file, tokens_file, verbose):
+def main(client_secrets_file, tokens_file, language, verbose):
     """Download all your Google Business reviews."""
 
     print_banner()
@@ -299,7 +304,8 @@ def main(client_secrets_file, tokens_file, verbose):
         else:
             click.echo(click.style(f"\nFetching all reviews for {location.title}...", fg="cyan"))
 
-        reviews = list(client.list_reviews(location.full_name, since=since))
+        review_language = language or location.language_code
+        reviews = list(client.list_reviews(location.full_name, since=since, language=review_language))
     except RateLimitError as e:
         print_quota_error(e, verbose=verbose, project_number=extract_project_number(creds.client_id))
         sys.exit(1)
