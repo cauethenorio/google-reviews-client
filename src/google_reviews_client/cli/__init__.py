@@ -92,7 +92,12 @@ def print_reviews_table(reviews: list) -> None:
     click.echo()
 
 
-def read_max_update_time(path: Path) -> datetime | None:
+def read_jsonl_metadata(path: Path) -> tuple[set[str], datetime | None]:
+    """Read a JSONL file and return (set of review_ids, max update_time).
+
+    Streams through the file without loading all review data into memory.
+    """
+    review_ids: set[str] = set()
     max_update_time: datetime | None = None
     with path.open() as f:
         for raw_line in f:
@@ -100,17 +105,56 @@ def read_max_update_time(path: Path) -> datetime | None:
             if not stripped:
                 continue
             review_dict = json.loads(stripped)
+            review_ids.add(review_dict["review_id"])
             ut = datetime.fromisoformat(review_dict["update_time"])
             if max_update_time is None or ut > max_update_time:
                 max_update_time = ut
-    return max_update_time
+    return review_ids, max_update_time
 
 
-def write_reviews_jsonl(reviews: list, path: Path, *, append: bool = False) -> None:
-    mode = "a" if append else "w"
-    with path.open(mode) as f:
+def write_reviews_jsonl(reviews: list, path: Path) -> None:
+    """Write reviews to a JSONL file (overwrite)."""
+    with path.open("w") as f:
         for review in reviews:
             f.write(json.dumps(review.to_dict(), ensure_ascii=False) + "\n")
+
+
+def sync_reviews_jsonl(reviews: list, path: Path, existing_ids: set[str]) -> tuple[int, int]:
+    """Sync fetched reviews into an existing JSONL file.
+
+    New reviews are appended. Updated reviews (same ID, newer data)
+    are replaced by streaming to a temp file and renaming.
+
+    Returns (new_count, updated_count).
+    """
+    new_reviews = [r for r in reviews if r.review_id not in existing_ids]
+    updated_reviews = {r.review_id: r for r in reviews if r.review_id in existing_ids}
+
+    if updated_reviews:
+        # Stream original to temp, replacing updated lines
+        tmp_path = path.with_suffix(".jsonl.tmp")
+        with path.open() as src, tmp_path.open("w") as dst:
+            for raw_line in src:
+                stripped = raw_line.strip()
+                if not stripped:
+                    continue
+                review_dict = json.loads(stripped)
+                rid = review_dict["review_id"]
+                if rid in updated_reviews:
+                    dst.write(json.dumps(updated_reviews[rid].to_dict(), ensure_ascii=False) + "\n")
+                else:
+                    dst.write(raw_line)
+            # Append new reviews at the end
+            for review in new_reviews:
+                dst.write(json.dumps(review.to_dict(), ensure_ascii=False) + "\n")
+        tmp_path.rename(path)
+    elif new_reviews:
+        # No updates, just append
+        with path.open("a") as f:
+            for review in new_reviews:
+                f.write(json.dumps(review.to_dict(), ensure_ascii=False) + "\n")
+
+    return len(new_reviews), len(updated_reviews)
 
 
 def extract_project_number(client_id: str | None) -> str | None:
@@ -298,7 +342,10 @@ def main(client_secrets_file, tokens_file, user_specified_language, verbose):
 
     # --- Fetch and save reviews ---
     output_path = Path(f"reviews-{location.location_id}.jsonl")
-    since = read_max_update_time(output_path) if output_path.exists() else None
+    existing_ids: set[str] = set()
+    since: datetime | None = None
+    if output_path.exists():
+        existing_ids, since = read_jsonl_metadata(output_path)
 
     review_language = None
     if user_specified_language:
@@ -330,11 +377,16 @@ def main(client_secrets_file, tokens_file, user_specified_language, verbose):
 
     print_reviews_table(reviews)
 
-    append = since is not None and output_path.exists()
-    write_reviews_jsonl(reviews, output_path, append=append)
-
-    click.echo()
-    if append:
-        click.echo(click.style("Done! ", fg="green") + f"{len(reviews)} new reviews appended to {output_path}")
+    if since is not None:
+        new_count, updated_count = sync_reviews_jsonl(reviews, output_path, existing_ids)
+        click.echo()
+        parts = []
+        if new_count:
+            parts.append(f"{new_count} new")
+        if updated_count:
+            parts.append(f"{updated_count} updated")
+        click.echo(click.style("Done! ", fg="green") + f"{' and '.join(parts)} reviews saved to {output_path}")
     else:
+        write_reviews_jsonl(reviews, output_path)
+        click.echo()
         click.echo(click.style("Done! ", fg="green") + f"{len(reviews)} reviews saved to {output_path}")
