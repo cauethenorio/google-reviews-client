@@ -28,7 +28,7 @@ class NotInstalledAppError(Exception):
     pass
 
 
-def _find_files(cwd: Path, globs: tuple[str, ...], explicit_path: Path | None = None) -> Path:
+def find_files(cwd: Path, globs: tuple[str, ...], explicit_path: Path | None = None) -> Path:
     """Find exactly one file matching globs, or use explicit path.
 
     Returns the single matching Path.
@@ -58,12 +58,12 @@ def _find_files(cwd: Path, globs: tuple[str, ...], explicit_path: Path | None = 
 
 def find_tokens_files(cwd: Path, explicit_path: Path | None = None) -> Path:
     """Find a tokens file (credentials.*.json)."""
-    return _find_files(cwd, TOKENS_GLOBS, explicit_path)
+    return find_files(cwd, TOKENS_GLOBS, explicit_path)
 
 
 def find_client_secrets_files(cwd: Path, explicit_path: Path | None = None) -> Path:
     """Find a client secrets file (client_secret*.json)."""
-    return _find_files(cwd, CLIENT_SECRETS_GLOBS, explicit_path)
+    return find_files(cwd, CLIENT_SECRETS_GLOBS, explicit_path)
 
 
 def load_tokens(path: Path) -> Credentials:

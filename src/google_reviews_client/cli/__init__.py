@@ -42,7 +42,7 @@ logger = logging.getLogger(__name__)
 auth_logger = logging.getLogger("google_reviews_client.cli.auth")
 
 
-def _get_version() -> str:
+def get_version() -> str:
     from importlib.metadata import PackageNotFoundError, version
 
     try:
@@ -51,13 +51,13 @@ def _get_version() -> str:
         return "dev"
 
 
-def _print_banner() -> None:
-    click.echo(click.style(f"google-reviews-client v{_get_version()}", bold=True))
+def print_banner() -> None:
+    click.echo(click.style(f"google-reviews-client v{get_version()}", bold=True))
     click.echo(click.style(f"Directory: {Path.cwd()}", dim=True))
     click.echo()
 
 
-def _select_item(items: list, label: str, format_str: str):
+def select_item(items: list, label: str, format_str: str):
     """Let user select from a list, auto-select if only one."""
     if not items:
         click.echo(click.style(f"No {label}s found.", fg="red"))
@@ -78,7 +78,7 @@ def _select_item(items: list, label: str, format_str: str):
         return items[choice - 1]
 
 
-def _print_reviews_table(reviews: list) -> None:
+def print_reviews_table(reviews: list) -> None:
     truncate = 60
     header = f"  {'Date':<12}{'Rating':<8}{'Review':<64}{'Reply':<5}"
     click.echo(click.style(header, bold=True))
@@ -91,7 +91,7 @@ def _print_reviews_table(reviews: list) -> None:
     click.echo()
 
 
-def _read_max_update_time(path: Path) -> datetime | None:
+def read_max_update_time(path: Path) -> datetime | None:
     max_update_time: datetime | None = None
     with path.open() as f:
         for raw_line in f:
@@ -105,14 +105,14 @@ def _read_max_update_time(path: Path) -> datetime | None:
     return max_update_time
 
 
-def _write_reviews_jsonl(reviews: list, path: Path, *, append: bool = False) -> None:
+def write_reviews_jsonl(reviews: list, path: Path, *, append: bool = False) -> None:
     mode = "a" if append else "w"
     with path.open(mode) as f:
         for review in reviews:
             f.write(json.dumps(review.to_dict(), ensure_ascii=False) + "\n")
 
 
-def _extract_project_number(client_id: str | None) -> str | None:
+def extract_project_number(client_id: str | None) -> str | None:
     """Extract project number from client_id (e.g., '724219465644-xxx.apps.googleusercontent.com' -> '724219465644')."""
     if not client_id:
         return None
@@ -120,7 +120,7 @@ def _extract_project_number(client_id: str | None) -> str | None:
     return parts[0] if parts[0].isdigit() else None
 
 
-def _print_quota_error(e: RateLimitError, *, verbose: bool, project_number: str | None = None) -> None:
+def print_quota_error(e: RateLimitError, *, verbose: bool, project_number: str | None = None) -> None:
     """Print a helpful message for quota errors, which usually mean API access hasn't been approved."""
     click.echo(click.style("\nERROR: ", fg="red") + "API quota exceeded.\n")
     click.echo("This usually means your Google Cloud project hasn't been approved for")
@@ -143,7 +143,7 @@ def _print_quota_error(e: RateLimitError, *, verbose: bool, project_number: str 
         logger.exception("Quota error details: %s", e)
 
 
-def _print_api_error(e: GoogleReviewsError, *, verbose: bool) -> None:
+def print_api_error(e: GoogleReviewsError, *, verbose: bool) -> None:
     """Print a clean API error message, extracting details from JSON body if possible."""
     click.echo(click.style("\nERROR: ", fg="red") + str(e))
 
@@ -165,7 +165,7 @@ def _print_api_error(e: GoogleReviewsError, *, verbose: bool) -> None:
             logger.exception("API error details")
 
 
-def _resolve_credentials(cwd: Path, tokens_file: Path | None, client_secrets_file: Path | None):
+def resolve_credentials(cwd: Path, tokens_file: Path | None, client_secrets_file: Path | None):
     """Resolve credentials: try tokens first, then OAuth flow.
 
     If --client-secrets-file is explicitly provided, skip tokens search
@@ -216,12 +216,12 @@ def _resolve_credentials(cwd: Path, tokens_file: Path | None, client_secrets_fil
 def main(client_secrets_file, tokens_file, verbose):
     """Download all your Google Business reviews."""
 
-    _print_banner()
+    print_banner()
     cwd = Path.cwd()
 
     # --- Resolve credentials ---
     try:
-        creds = _resolve_credentials(cwd, tokens_file, client_secrets_file)
+        creds = resolve_credentials(cwd, tokens_file, client_secrets_file)
     except NoFilesFoundError:
         click.echo(click.style("ERROR: ", fg="red") + "No credentials or client secrets files found.\n")
         click.echo("To set up credentials:")
@@ -253,13 +253,15 @@ def main(client_secrets_file, tokens_file, verbose):
 
     # --- Fetch accounts and locations ---
     try:
+        click.echo()
         click.echo(click.style("Fetching accounts...", fg="cyan"))
         accounts = client.list_accounts()
-        account = _select_item(accounts, "account", "{0.name} | {0.account_name}")
+        account = select_item(accounts, "account", "{0.name} | {0.account_name}")
 
+        click.echo()
         click.echo(click.style("Fetching locations...", fg="cyan"))
         locations = client.list_locations(account.name)
-        location = _select_item(locations, "location", "{0.name} | {0.title}")
+        location = select_item(locations, "location", "{0.name} | {0.title}")
     except AuthenticationError:
         click.echo(click.style("\nERROR: ", fg="red") + "Authentication failed.\n")
         click.echo("Your API access may not be approved. To request access:")
@@ -269,18 +271,18 @@ def main(client_secrets_file, tokens_file, verbose):
             logger.exception("Authentication error details")
         sys.exit(1)
     except RateLimitError as e:
-        _print_quota_error(e, verbose=verbose, project_number=_extract_project_number(creds.client_id))
+        print_quota_error(e, verbose=verbose, project_number=extract_project_number(creds.client_id))
         sys.exit(1)
     except APIPermissionError as e:
-        _print_api_error(e, verbose=verbose)
+        print_api_error(e, verbose=verbose)
         sys.exit(1)
     except GoogleReviewsError as e:
-        _print_api_error(e, verbose=verbose)
+        print_api_error(e, verbose=verbose)
         sys.exit(1)
 
     # --- Fetch and save reviews ---
     output_path = Path(f"reviews-{location.location_id}.jsonl")
-    since = _read_max_update_time(output_path) if output_path.exists() else None
+    since = read_max_update_time(output_path) if output_path.exists() else None
 
     try:
         if since is not None:
@@ -290,21 +292,22 @@ def main(client_secrets_file, tokens_file, verbose):
 
         reviews = list(client.list_reviews(location.full_name, since=since))
     except RateLimitError as e:
-        _print_quota_error(e, verbose=verbose, project_number=_extract_project_number(creds.client_id))
+        print_quota_error(e, verbose=verbose, project_number=extract_project_number(creds.client_id))
         sys.exit(1)
     except GoogleReviewsError as e:
-        _print_api_error(e, verbose=verbose)
+        print_api_error(e, verbose=verbose)
         sys.exit(1)
 
     if not reviews:
         click.echo("No new reviews found.")
         sys.exit(0)
 
-    _print_reviews_table(reviews)
+    print_reviews_table(reviews)
 
     append = since is not None and output_path.exists()
-    _write_reviews_jsonl(reviews, output_path, append=append)
+    write_reviews_jsonl(reviews, output_path, append=append)
 
+    click.echo()
     if append:
         click.echo(click.style("Done! ", fg="green") + f"{len(reviews)} new reviews appended to {output_path}")
     else:
