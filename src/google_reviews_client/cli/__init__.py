@@ -16,7 +16,13 @@ from pathlib import Path
 import click
 
 from google_reviews_client.client import GoogleReviewsClient
-from google_reviews_client.exceptions import AuthenticationError, GoogleReviewsError
+from google_reviews_client.exceptions import (
+    AuthenticationError,
+    GoogleReviewsError,
+)
+from google_reviews_client.exceptions import (
+    PermissionError as APIPermissionError,
+)
 
 from .auth import (
     MultipleFilesFoundError,
@@ -104,19 +110,45 @@ def _write_reviews_jsonl(reviews: list, path: Path, *, append: bool = False) -> 
             f.write(json.dumps(review.to_dict(), ensure_ascii=False) + "\n")
 
 
+def _print_api_error(e: GoogleReviewsError, *, verbose: bool) -> None:
+    """Print a clean API error message, extracting details from JSON body if possible."""
+    click.echo(click.style("\nERROR: ", fg="red") + str(e))
+
+    if not e.body:
+        return
+
+    # Try to extract a clean message from the JSON error body
+    try:
+        data = json.loads(e.body)
+        error_info = data.get("error", {})
+        message = error_info.get("message", "")
+        if message:
+            click.echo(f"  {message}")
+        if verbose:
+            logger.exception("API error details")
+    except (json.JSONDecodeError, AttributeError):
+        click.echo(f"  Details: {e.body}")
+        if verbose:
+            logger.exception("API error details")
+
+
 def _resolve_credentials(cwd: Path, tokens_file: Path | None, client_secrets_file: Path | None):
     """Resolve credentials: try tokens first, then OAuth flow.
 
-    Raises NoFilesFoundError, MultipleFilesFoundError, PortsAlreadyInUseError.
+    If --client-secrets-file is explicitly provided, skip tokens search
+    and go straight to OAuth flow (the user wants to use that specific project).
+
+    Raises NoFilesFoundError, MultipleFilesFoundError, NotInstalledAppError.
     """
-    # Try tokens file first
-    try:
-        path = find_tokens_files(cwd, explicit_path=tokens_file)
-        return load_tokens(path)
-    except NoFilesFoundError:
-        logger.debug("No tokens files found, will try OAuth flow")
-    except MultipleFilesFoundError:
-        raise
+    # If client-secrets-file was explicitly provided, skip tokens and run OAuth
+    if client_secrets_file is None:
+        try:
+            path = find_tokens_files(cwd, explicit_path=tokens_file)
+            return load_tokens(path)
+        except NoFilesFoundError:
+            logger.debug("No tokens files found, will try OAuth flow")
+        except MultipleFilesFoundError:
+            raise
 
     # No tokens — run OAuth flow
     path = find_client_secrets_files(cwd, explicit_path=client_secrets_file)
@@ -194,12 +226,11 @@ def main(client_secrets_file, tokens_file, verbose):
         if verbose:
             logger.exception("Authentication error details")
         sys.exit(1)
+    except APIPermissionError as e:
+        _print_api_error(e, verbose=verbose)
+        sys.exit(1)
     except GoogleReviewsError as e:
-        click.echo(click.style("\nERROR: ", fg="red") + str(e))
-        if e.body:
-            click.echo(f"  Details: {e.body}")
-        if verbose:
-            logger.exception("API error details")
+        _print_api_error(e, verbose=verbose)
         sys.exit(1)
 
     # --- Fetch and save reviews ---
@@ -214,11 +245,7 @@ def main(client_secrets_file, tokens_file, verbose):
 
         reviews = list(client.list_reviews(location.full_name, since=since))
     except GoogleReviewsError as e:
-        click.echo(click.style("\nERROR: ", fg="red") + str(e))
-        if e.body:
-            click.echo(f"  Details: {e.body}")
-        if verbose:
-            logger.exception("API error details")
+        _print_api_error(e, verbose=verbose)
         sys.exit(1)
 
     if not reviews:
