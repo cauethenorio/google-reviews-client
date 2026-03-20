@@ -111,10 +111,11 @@ def fetch_user_info(creds: Credentials) -> tuple[str, str] | None:
 def save_tokens(cwd: Path, creds: Credentials, *, email: str | None = None) -> Path:
     """Save credentials to a tokens file. Returns the path written.
 
-    If email is provided, uses it as the filename suffix (lowercased).
-    Otherwise falls back to the client_id prefix.
+    Filename format: credentials.{project_number}.{email}.json
+    Falls back to credentials.{project_number}.json if email is unavailable.
     """
-    suffix = email.lower() if email else (creds.client_id.split(".")[0] if creds.client_id else "default")
+    project_number = creds.client_id.split("-")[0] if creds.client_id else "default"
+    suffix = f"{project_number}.{email.lower()}" if email else project_number
     filename = f"credentials.{suffix}.json"
     filepath = cwd / filename
     filepath.write_text(creds.to_json())
