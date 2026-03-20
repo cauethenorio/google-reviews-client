@@ -82,7 +82,7 @@ def select_item(items: list, label: str, format_str: str):
 
 STARS_DISPLAY_WIDTH = 11  # 5 stars x 2 columns each + 1 space
 REVIEWER_WIDTH = 20
-FIXED_COLS_WIDTH = 12 + STARS_DISPLAY_WIDTH + REVIEWER_WIDTH + 5  # date + stars + reviewer + reply
+FIXED_COLS_WIDTH = 12 + STARS_DISPLAY_WIDTH + REVIEWER_WIDTH + 7  # date + stars + reviewer + replied
 MIN_COMMENT_WIDTH = 20
 
 
@@ -98,7 +98,7 @@ def format_stars(rating: int) -> str:
 def print_reviews_table_header() -> None:
     comment_width = get_comment_width()
     rating_padding = " " * (STARS_DISPLAY_WIDTH - 6)  # 6 = len("Rating")
-    header = f"{'Date':<12}Rating{rating_padding}{'Review':<{comment_width}}{'Reviewer':<{REVIEWER_WIDTH}}Reply"
+    header = f"{'Date':<12}Rating{rating_padding}{'Review':<{comment_width}}{'Reviewer':<{REVIEWER_WIDTH}}Replied"
     click.echo(click.style(header, bold=True))
     click.echo("-" * (FIXED_COLS_WIDTH + comment_width))
 
