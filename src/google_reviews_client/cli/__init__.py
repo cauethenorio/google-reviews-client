@@ -112,7 +112,15 @@ def _write_reviews_jsonl(reviews: list, path: Path, *, append: bool = False) -> 
             f.write(json.dumps(review.to_dict(), ensure_ascii=False) + "\n")
 
 
-def _print_quota_error(e: RateLimitError, *, verbose: bool) -> None:
+def _extract_project_number(client_id: str | None) -> str | None:
+    """Extract project number from client_id (e.g., '724219465644-xxx.apps.googleusercontent.com' -> '724219465644')."""
+    if not client_id:
+        return None
+    parts = client_id.split("-", 1)
+    return parts[0] if parts[0].isdigit() else None
+
+
+def _print_quota_error(e: RateLimitError, *, verbose: bool, project_number: str | None = None) -> None:
     """Print a helpful message for quota errors, which usually mean API access hasn't been approved."""
     click.echo(click.style("\nERROR: ", fg="red") + "API quota exceeded.\n")
     click.echo("This usually means your Google Cloud project hasn't been approved for")
@@ -121,11 +129,14 @@ def _print_quota_error(e: RateLimitError, *, verbose: bool) -> None:
     click.echo("1. Go to https://support.google.com/business/contact/api_default")
     click.echo("2. Select 'Application for Basic API Access'")
     click.echo("3. Use the email that's an owner or manager on your Business Profile\n")
+    project_param = f"?project={project_number}" if project_number else ""
     click.echo("After approval, make sure these APIs are enabled in your project:")
     click.echo("  - My Business Account Management API")
-    click.echo("    https://console.cloud.google.com/apis/api/mybusinessaccountmanagement.googleapis.com")
+    click.echo(
+        f"    https://console.cloud.google.com/apis/api/mybusinessaccountmanagement.googleapis.com{project_param}"
+    )
     click.echo("  - Google My Business API")
-    click.echo("    https://console.cloud.google.com/apis/api/mybusiness.googleapis.com\n")
+    click.echo(f"    https://console.cloud.google.com/apis/api/mybusiness.googleapis.com{project_param}\n")
     click.echo("You can check your status in Cloud Console > APIs > Quotas:")
     click.echo("  0 requests/min = pending, 300 requests/min = approved")
     if verbose:
@@ -258,7 +269,7 @@ def main(client_secrets_file, tokens_file, verbose):
             logger.exception("Authentication error details")
         sys.exit(1)
     except RateLimitError as e:
-        _print_quota_error(e, verbose=verbose)
+        _print_quota_error(e, verbose=verbose, project_number=_extract_project_number(creds.client_id))
         sys.exit(1)
     except APIPermissionError as e:
         _print_api_error(e, verbose=verbose)
@@ -279,7 +290,7 @@ def main(client_secrets_file, tokens_file, verbose):
 
         reviews = list(client.list_reviews(location.full_name, since=since))
     except RateLimitError as e:
-        _print_quota_error(e, verbose=verbose)
+        _print_quota_error(e, verbose=verbose, project_number=_extract_project_number(creds.client_id))
         sys.exit(1)
     except GoogleReviewsError as e:
         _print_api_error(e, verbose=verbose)
