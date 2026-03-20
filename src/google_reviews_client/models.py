@@ -131,7 +131,11 @@ class Review:
 
 @dataclass
 class Location:
-    """Google Business location."""
+    """
+    https://developers.google.com/my-business/reference/businessinformation/rest/v1/accounts.locations
+
+    Google Business location.
+    """
 
     name: str
     location_id: str
