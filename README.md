@@ -65,7 +65,7 @@ The Business Profile API is not open to everyone - Google reviews each applicati
 3. Use the **same email** that's an owner or manager on your Business Profile
 4. Enter your **project number** from step 2 and your **company website** URL
 
-> Applications are typically reviewed within 14 days. You can check your status in Cloud Console → APIs → Quotas for the
+> You'll get an email within 5 business days. You can also check your status in Cloud Console → APIs → Quotas for the
 > Account Management API: **0 requests per minute** means pending, **300 requests per minute** means approved.
 
 **After approval, enable these APIs** in the [API Library](https://console.cloud.google.com/apis/library):
