@@ -32,7 +32,8 @@ you through everything.
 
 ### 1. Set up your Google Business Profile
 
-You need to be an **owner or manager** of a verified business listing that's been **active for at least 60 days** before you can request API access.
+You need to be an **owner or manager** of a verified business listing that's been **active for at least 60 days** before
+you can request API access.
 
 **If you don't have a listing yet:**
 
@@ -51,7 +52,7 @@ enough.
 
 1. Go to [console.cloud.google.com/projectcreate](https://console.cloud.google.com/projectcreate)
 2. Give it a name (e.g., "My Business Reviews") and click **Create**
-3. Note your **project number** from the project dashboard - you'll need it in the next step
+3. Note your **project number** from the project dashboard, you'll need it in the next step
 
 ### 3. Get API access approval and enable the APIs
 
@@ -62,7 +63,7 @@ The Business Profile API is not open to everyone - Google reviews each applicati
 1. Go to the [API access request form](https://support.google.com/business/contact/api_default)
 2. Select **"Application for Basic API Access"** from the dropdown
 3. Use the **same email** that's an owner or manager on your Business Profile
-4. Enter your **project number** from step 2
+4. Enter your **project number** from step 2 and your **company website** URL
 
 > Applications are typically reviewed within 14 days. You can check your status in Cloud Console → APIs → Quotas for the
 > Account Management API: **0 requests per minute** means pending, **300 requests per minute** means approved.
