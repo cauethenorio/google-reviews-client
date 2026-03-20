@@ -70,9 +70,8 @@ The Business Profile API is not open to everyone - Google reviews each applicati
 
 **After approval, enable these APIs** in the [API Library](https://console.cloud.google.com/apis/library):
 
-1. **My Business Account Management API**
-2. **My Business Business Information API**
-3. **Google My Business API** (this is the reviews API)
+1. **My Business Account Management API** (accounts and locations)
+2. **Google My Business API** (reviews)
 
 > For each one: search by name → click on it → click **Enable**.
 
