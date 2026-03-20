@@ -299,12 +299,24 @@ def main(client_secrets_file, tokens_file, language, verbose):
     since = read_max_update_time(output_path) if output_path.exists() else None
 
     try:
-        if since is not None:
-            click.echo(click.style(f"\nSyncing reviews since {since.isoformat()}...", fg="cyan"))
-        else:
-            click.echo(click.style(f"\nFetching all reviews for {location.title}...", fg="cyan"))
-
         review_language = language or location.language_code
+        if review_language:
+            if language:
+                click.echo(click.style(f"\nLanguage: {review_language} (from --language flag)", dim=True))
+            else:
+                click.echo(
+                    click.style(
+                        f"\nLanguage: {review_language} (from location)."
+                        " Use --language to override if reviews are translated.",
+                        dim=True,
+                    )
+                )
+
+        if since is not None:
+            click.echo(click.style(f"Syncing reviews since {since.isoformat()}...", fg="cyan"))
+        else:
+            click.echo(click.style(f"Fetching all reviews for {location.title}...", fg="cyan"))
+
         reviews = list(client.list_reviews(location.full_name, since=since, language=review_language))
     except RateLimitError as e:
         print_quota_error(e, verbose=verbose, project_number=extract_project_number(creds.client_id))
