@@ -79,19 +79,35 @@ def select_item(items: list, label: str, format_str: str):
         return items[choice - 1]
 
 
+FIXED_COLS_WIDTH = 2 + 12 + 7 + 5  # indent + date + rating (stars + space) + reply
+MIN_COMMENT_WIDTH = 20
+
+
+def get_comment_width() -> int:
+    term_width = click.get_terminal_size()[0]
+    return max(term_width - FIXED_COLS_WIDTH, MIN_COMMENT_WIDTH)
+
+
+def format_stars(rating: int) -> str:
+    return "\u2b50" * rating + "\u2606" * (5 - rating) + " "
+
+
 def print_reviews_table_header() -> None:
-    header = f"  {'Date':<12}{'Rating':<8}{'Review':<64}{'Reply':<5}"
+    comment_width = get_comment_width()
+    header = f"  {'Date':<12}{'Rating':<7}{'Review':<{comment_width}}{'Reply':<5}"
     click.echo(click.style(header, bold=True))
-    click.echo(f"  {'-' * 87}")
+    click.echo(f"  {'-' * (12 + 7 + comment_width + 5)}")
 
 
 def print_review_row(review) -> None:
-    truncate = 60
+    comment_width = get_comment_width()
     comment = review.comment.replace("\n", " ")
-    comment = comment[:truncate] + "..." if len(comment) > truncate else comment
+    if len(comment) > comment_width - 3:
+        comment = comment[: comment_width - 3] + "..."
     date_str = review.create_time.strftime("%Y-%m-%d")
+    stars = format_stars(review.rating_value)
     reply = "Yes" if review.has_reply else "No"
-    click.echo(f"  {date_str:<12}{review.rating_value:<8}{comment:<64}{reply:<5}")
+    click.echo(f"  {date_str:<12}{stars}{comment:<{comment_width}}{reply:<5}")
 
 
 def read_jsonl_metadata(path: Path) -> tuple[set[str], datetime | None]:
