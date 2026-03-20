@@ -120,23 +120,32 @@ def extract_project_number(client_id: str | None) -> str | None:
     return parts[0] if parts[0].isdigit() else None
 
 
+def terminal_link(url: str, text: str) -> str:
+    """Create a clickable terminal hyperlink using OSC 8."""
+    return f"\033]8;;{url}\033\\{text}\033]8;;\033\\"
+
+
 def print_quota_error(e: RateLimitError, *, verbose: bool, project_number: str | None = None) -> None:
     """Print a helpful message for quota errors, which usually mean API access hasn't been approved."""
     click.echo(click.style("\nERROR: ", fg="red") + "API quota exceeded.\n")
     click.echo("This usually means your Google Cloud project hasn't been approved for")
     click.echo("Business Profile API access yet.\n")
+
+    access_url = "https://support.google.com/business/contact/api_default"
     click.echo("To request access:")
-    click.echo("1. Go to https://support.google.com/business/contact/api_default")
+    click.echo(f"1. Go to {terminal_link(access_url, click.style('API access request form', fg='cyan'))}")
     click.echo("2. Select 'Application for Basic API Access'")
     click.echo("3. Use the email that's an owner or manager on your Business Profile\n")
+
     project_param = f"?project={project_number}" if project_number else ""
-    click.echo("After approval, make sure these APIs are enabled in your project:")
-    click.echo("  - My Business Account Management API")
-    click.echo(
-        f"    https://console.cloud.google.com/apis/api/mybusinessaccountmanagement.googleapis.com{project_param}"
+    acct_mgmt_url = (
+        f"https://console.cloud.google.com/apis/api/mybusinessaccountmanagement.googleapis.com{project_param}"
     )
-    click.echo("  - Google My Business API")
-    click.echo(f"    https://console.cloud.google.com/apis/api/mybusiness.googleapis.com{project_param}\n")
+    gmb_url = f"https://console.cloud.google.com/apis/api/mybusiness.googleapis.com{project_param}"
+    click.echo("After approval, make sure these APIs are enabled in your project:")
+    click.echo(f"  - {terminal_link(acct_mgmt_url, click.style('My Business Account Management API', fg='cyan'))}")
+    click.echo(f"  - {terminal_link(gmb_url, click.style('Google My Business API', fg='cyan'))}\n")
+
     click.echo("You can check your status in Cloud Console > APIs > Quotas:")
     click.echo("  0 requests/min = pending, 300 requests/min = approved")
     if verbose:
