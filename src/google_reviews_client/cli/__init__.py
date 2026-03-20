@@ -11,6 +11,7 @@ import json
 import logging
 import shutil
 import sys
+import unicodedata
 from datetime import datetime
 from pathlib import Path
 
@@ -80,6 +81,33 @@ def select_item(items: list, label: str, format_str: str):
         return items[choice - 1]
 
 
+def display_width(text: str) -> int:
+    """Return the number of terminal columns a string occupies."""
+    width = 0
+    for ch in text:
+        eaw = unicodedata.east_asian_width(ch)
+        width += 2 if eaw in ("W", "F") else 1
+    return width
+
+
+def truncate_to_width(text: str, max_width: int) -> str:
+    """Truncate a string to fit in max_width terminal columns, adding '...' if truncated."""
+    width = 0
+    for i, ch in enumerate(text):
+        eaw = unicodedata.east_asian_width(ch)
+        char_width = 2 if eaw in ("W", "F") else 1
+        if width + char_width > max_width - 3:
+            return text[:i] + "..."
+        width += char_width
+    return text
+
+
+def pad_to_width(text: str, target_width: int) -> str:
+    """Pad a string with spaces to fill target_width terminal columns."""
+    current = display_width(text)
+    return text + " " * max(target_width - current, 0)
+
+
 STARS_DISPLAY_WIDTH = 11  # 5 stars x 2 columns each + 1 space
 REVIEWER_WIDTH = 20
 FIXED_COLS_WIDTH = 12 + STARS_DISPLAY_WIDTH + REVIEWER_WIDTH + 7  # date + stars + reviewer + replied
@@ -106,15 +134,14 @@ def print_reviews_table_header() -> None:
 def print_review_row(review) -> None:
     comment_width = get_comment_width()
     comment = review.comment.replace("\n", " ")
-    if len(comment) > comment_width - 3:
-        comment = comment[: comment_width - 3] + "..."
+    comment = truncate_to_width(comment, comment_width)
+    comment = pad_to_width(comment, comment_width)
     date_str = review.create_time.strftime("%Y-%m-%d")
     stars = format_stars(review.rating_value)
-    reviewer = review.reviewer.display_name
-    if len(reviewer) > REVIEWER_WIDTH - 3:
-        reviewer = reviewer[: REVIEWER_WIDTH - 3] + "..."
+    reviewer = truncate_to_width(review.reviewer.display_name, REVIEWER_WIDTH)
+    reviewer = pad_to_width(reviewer, REVIEWER_WIDTH)
     reply = "Yes" if review.has_reply else "No"
-    click.echo(f"{date_str:<12}{stars}{comment:<{comment_width}}{reviewer:<{REVIEWER_WIDTH}}{reply}")
+    click.echo(f"{date_str:<12}{stars}{comment}{reviewer}{reply}")
 
 
 def read_jsonl_metadata(path: Path) -> tuple[set[str], datetime | None]:
