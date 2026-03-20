@@ -444,8 +444,9 @@ def main(client_secrets_file, config_file, user_specified_language, verbose):
             click.echo(click.style("ERROR: ", fg="red") + "Multiple client secrets files found:")
             for path in e.files_found:
                 click.echo(f"  {click.style(path.name, fg='yellow')}")
+            prog = Path(sys.argv[0]).name
             click.echo("\nSpecify which file to use:")
-            click.echo("  google-reviews --client-secrets-file <path>")
+            click.echo(f"  {prog} --client-secrets-file <path>")
             sys.exit(1)
         except NotInstalledAppError:
             click.echo(click.style("ERROR: ", fg="red") + "Only desktop (installed) app credentials are supported.\n")
