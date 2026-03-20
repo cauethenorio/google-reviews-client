@@ -21,8 +21,8 @@ A lightweight, non-official Python client for the Google Business Profile API: a
 
 Before you can use this project, you'll need:
 
-1. **A Google Business Profile** - management access to a verified business listing on Google, active for at least 60
-   days
+1. **A Google Business Profile** - owner or manager access to a verified business listing on Google, active for at least
+   60 days
 2. **A Google Cloud project** - this is where your API credentials live
 3. **API access approval** - Google requires a formal application, then you enable the APIs
 4. **OAuth credentials** - configure the consent screen and download a JSON file for authentication
