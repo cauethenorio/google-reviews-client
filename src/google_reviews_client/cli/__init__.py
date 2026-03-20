@@ -327,7 +327,7 @@ def first_time_setup(cwd: Path, client_secrets_file: Path | None) -> Config:
         target = {
             "account": account.name,
             "account_name": account.account_name,
-            "locations": [{"location": loc.name, "title": loc.title} for loc in selected_locations],
+            "locations": [{"location": loc.full_name, "title": loc.title} for loc in selected_locations],
         }
         targets.append(target)
 
@@ -501,7 +501,7 @@ def main(client_secrets_file, config_file, user_specified_language, verbose):
                 config.targets.append({
                     "account": account.name,
                     "account_name": account.account_name,
-                    "locations": [{"location": loc.name, "title": loc.title} for loc in selected_locations],
+                    "locations": [{"location": loc.full_name, "title": loc.title} for loc in selected_locations],
                 })
             save_config(config)
 
