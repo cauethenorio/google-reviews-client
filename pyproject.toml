@@ -1,12 +1,14 @@
 [project]
 name = "google-reviews-client"
-version = "0.0.1"
+version = "0.1.0"
 description = "A lightweight Python client for Google Business Profile reviews and locations (non-official)"
 authors = [{ name = "Cauê Thenório", email = "caue@thenorio.com.br" }]
 readme = "README.md"
 keywords = ["google", "business profile", "google my business", "reviews", "ratings", "locations", "gbp", "maps"]
 requires-python = ">=3.10"
+license = "MIT"
 classifiers = [
+    "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
     "Programming Language :: Python",
     "Programming Language :: Python :: 3",
@@ -28,9 +30,9 @@ dependencies = [
 google-reviews = "google_reviews_client.cli:main"
 
 [project.urls]
-Homepage = "https://cauethenorio.github.io/google-reviews-client/"
+Homepage = "https://github.com/cauethenorio/google-reviews-client"
 Repository = "https://github.com/cauethenorio/google-reviews-client"
-Documentation = "https://cauethenorio.github.io/google-reviews-client/"
+Changelog = "https://github.com/cauethenorio/google-reviews-client/blob/main/CHANGELOG.md"
 
 [dependency-groups]
 dev = [
@@ -149,7 +151,6 @@ ignore = [
 
 [tool.ruff.lint.per-file-ignores]
 "tests/*" = ["S101", "PLR2004"]
-"src/google_reviews_client/demo.py" = ["T201", "S603", "S607", "PLC0415"]
 "src/google_reviews_client/cli/__init__.py" = ["C901", "PLR0912", "PLR0915", "PLC0415"]
 
 [tool.ruff.format]
