@@ -129,6 +129,11 @@ class GoogleReviewsClient:
         page_token = None
         extra_headers = {"Accept-Language": language} if language else None
 
+        # When syncing, order by updateTime desc so we can stop early
+        # once we reach reviews we've already seen
+        if since is not None and order_by is None:
+            order_by = "updateTime desc"
+
         while True:
             params: dict[str, str] = {}
             if page_token:
@@ -139,7 +144,7 @@ class GoogleReviewsClient:
             for review_data in data["reviews"]:
                 review = Review.from_api_response(review_data)
                 if since is not None and review.update_time <= since:
-                    continue
+                    return
                 yield review
             page_token = data.get("nextPageToken")
             if not page_token:
