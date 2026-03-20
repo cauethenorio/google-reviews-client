@@ -108,14 +108,15 @@ class GoogleReviewsClient:
 
     def list_accounts(self) -> list[Account]:
         data = self._authenticated_get(f"{ACCOUNT_MGMT_BASE}/v1/accounts")
-        return [Account.from_api_response(acc) for acc in data["accounts"]]
+        # Google API returns {} instead of {"accounts": []} when there are no results
+        return [Account.from_api_response(acc) for acc in data.get("accounts", [])]
 
     def list_locations(self, account: str) -> list[Location]:
         data = self._authenticated_get(
             f"{ACCOUNT_MGMT_BASE}/v1/{account}/locations",
             params={"readMask": LOCATION_ALL_FIELDS},
         )
-        return [Location.from_api_response(loc, account=account) for loc in data["locations"]]
+        return [Location.from_api_response(loc, account=account) for loc in data.get("locations", [])]
 
     def list_reviews(
         self,
@@ -141,7 +142,7 @@ class GoogleReviewsClient:
             if order_by is not None:
                 params["orderBy"] = order_by
             data = self._authenticated_get(url, params=params, extra_headers=extra_headers)
-            for review_data in data["reviews"]:
+            for review_data in data.get("reviews", []):
                 review = Review.from_api_response(review_data)
                 if since is not None and review.update_time <= since:
                     return

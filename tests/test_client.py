@@ -350,22 +350,25 @@ class TestListReviews:
         params = second_call.kwargs.get("params", {})
         assert params.get("pageToken") == "tok123"
 
-    def test_update_time_filters_old_reviews(self):
+    def test_since_filters_old_reviews(self):
+        """When since is set, reviews are ordered by updateTime desc and
+        iteration stops as soon as we hit a review <= since (early exit).
+        Mock data must reflect this desc ordering."""
         client = self._make_client()
         client.http_client.get.return_value = {
             "reviews": [
-                self._review_data("old", update_time="2024-01-01T00:00:00Z"),
                 self._review_data("new", update_time="2024-06-01T00:00:00Z"),
+                self._review_data("old", update_time="2024-01-01T00:00:00Z"),
             ],
         }
 
         cutoff = datetime(2024, 3, 1, tzinfo=timezone.utc)
-        reviews = list(client.list_reviews("accounts/1/locations/2", update_time=cutoff))
+        reviews = list(client.list_reviews("accounts/1/locations/2", since=cutoff))
 
         assert len(reviews) == 1
         assert reviews[0].review_id == "new"
 
-    def test_update_time_all_filtered_yields_nothing(self):
+    def test_since_all_filtered_yields_nothing(self):
         client = self._make_client()
         client.http_client.get.return_value = {
             "reviews": [
@@ -374,9 +377,29 @@ class TestListReviews:
         }
 
         cutoff = datetime(2024, 12, 1, tzinfo=timezone.utc)
-        reviews = list(client.list_reviews("accounts/1/locations/2", update_time=cutoff))
+        reviews = list(client.list_reviews("accounts/1/locations/2", since=cutoff))
 
         assert reviews == []
+
+    def test_order_by_passes_to_api_params(self):
+        client = self._make_client()
+        client.http_client.get.return_value = {"reviews": [self._review_data("r1")]}
+
+        list(client.list_reviews("accounts/1/locations/2", order_by="rating desc"))
+
+        call_kwargs = client.http_client.get.call_args
+        params = call_kwargs.kwargs.get("params", {})
+        assert params.get("orderBy") == "rating desc"
+
+    def test_order_by_none_omits_param(self):
+        client = self._make_client()
+        client.http_client.get.return_value = {"reviews": []}
+
+        list(client.list_reviews("accounts/1/locations/2"))
+
+        call_kwargs = client.http_client.get.call_args
+        params = call_kwargs.kwargs.get("params", {})
+        assert "orderBy" not in params
 
     def test_calls_correct_url(self):
         client = self._make_client()
