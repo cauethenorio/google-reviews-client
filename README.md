@@ -1,7 +1,7 @@
 # google-reviews-client
 
 [![Release](https://img.shields.io/github/v/release/cauethenorio/google-reviews-client)](https://img.shields.io/github/v/release/cauethenorio/google-reviews-client)
-[![Build status](https://img.shields.io/github/actions/workflow/status/cauethenorio/google-reviews-client/main.yml?branch=main)](https://github.com/cauethenorio/google-reviews-client/actions/workflows/main.yml?query=branch%3Amain)
+[![Build status](https://img.shields.io/github/actions/workflow/status/cauethenorio/google-reviews-client/lint-and-test.yml?branch=main)](https://github.com/cauethenorio/google-reviews-client/actions/workflows/lint-and-test.yml?query=branch%3Amain)
 [![codecov](https://codecov.io/gh/cauethenorio/google-reviews-client/branch/main/graph/badge.svg)](https://codecov.io/gh/cauethenorio/google-reviews-client)
 [![License](https://img.shields.io/github/license/cauethenorio/google-reviews-client)](https://img.shields.io/github/license/cauethenorio/google-reviews-client)
 
