@@ -27,7 +27,10 @@ dependencies = [
 ]
 
 [project.scripts]
-google-reviews = "google_reviews_client.cli:main"
+google-reviews-download = "google_reviews_client.cli:main"
+
+[project.optional-dependencies]
+cli = ["click>=8.3.1"]
 
 [project.urls]
 Homepage = "https://github.com/cauethenorio/google-reviews-client"
@@ -37,14 +40,10 @@ Changelog = "https://github.com/cauethenorio/google-reviews-client/blob/main/CHA
 [dependency-groups]
 dev = [
     "pytest>=7.2.0",
-
     "tox-uv>=1.11.3",
     "ty>=0.0.1a16",
     "pytest-cov>=4.0.0",
     "ruff>=0.11.5",
-
-]
-download-cli = [
     "click>=8.3.1",
 ]
 

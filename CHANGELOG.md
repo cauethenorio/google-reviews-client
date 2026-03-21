@@ -16,7 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Lazy pagination for reviews (fetches pages on demand)
 - Incremental sync with early exit (orders by `updateTime desc`, stops when caught up)
 - Typed exceptions: `AuthenticationError`, `RateLimitError`, `NotFoundError`, `PermissionError`, `GoogleAPIError`
-- CLI (`google-reviews`) with click-based interface:
+- CLI (`google-reviews-download`) with click-based interface:
   - Config files (`google-reviews-config.{project}.{email}.json`) storing credentials and targets
   - Multi-account and multi-location support with multi-select pickers
   - Auto-sync on subsequent runs (no prompts needed)

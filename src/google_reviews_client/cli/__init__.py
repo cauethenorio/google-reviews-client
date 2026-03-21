@@ -1,11 +1,11 @@
 """CLI for Google Reviews Client.
 
 Usage:
-    google-reviews                                    # auto-discover configs or first-time setup
-    google-reviews --config-file /path/to/config.json # use a specific config
-    google-reviews --client-secrets-file /path/to/secrets.json  # first-time setup
-    google-reviews --language pt-BR                   # override review language
-    google-reviews -v                                 # verbose mode
+    google-reviews-download                                    # auto-discover configs or first-time setup
+    google-reviews-download --config-file /path/to/config.json # use a specific config
+    google-reviews-download --client-secrets-file /path/to/secrets.json  # first-time setup
+    google-reviews-download --language pt-BR                   # override review language
+    google-reviews-download -v                                 # verbose mode
 """
 
 import json
