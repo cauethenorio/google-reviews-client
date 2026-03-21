@@ -116,37 +116,44 @@ Or with [uv](https://docs.astral.sh/uv/):
 uv add google-reviews-client
 ```
 
-To use the CLI, install with the `cli` extra:
-
-```bash
-pip install google-reviews-client[cli]
-```
-
 ## Quick Start
 
 ### CLI
+
+With [uv](https://docs.astral.sh/uv/) installed, run directly without installing:
+
+```bash
+uvx 'google-reviews-client[cli]'
+```
+
+Or install it first, then run:
+
+```bash
+pip install 'google-reviews-client[cli]'
+google-reviews-client
+```
 
 The CLI authenticates via browser-based OAuth, fetches your reviews, prints them to the terminal, and saves them as
 JSONL.
 
 ```bash
 # First run — auto-detect client secrets, run OAuth, select accounts/locations
-google-reviews-download
+google-reviews-client
 
 # Subsequent runs — auto-sync all saved targets
-google-reviews-download
+google-reviews-client
 
 # Specify client secrets file for first-time setup
-google-reviews-download --client-secrets-file /path/to/client_secret.json
+google-reviews-client --client-secrets-file /path/to/client_secret.json
 
 # Use a specific config file
-google-reviews-download --config-file google-reviews-config.123.user@gmail.com.json
+google-reviews-client --config-file google-reviews-config.123.user@gmail.com.json
 
 # Set language for reviews (saved per-location in config)
-google-reviews-download --language pt-BR
+google-reviews-client --language pt-BR
 
 # Verbose mode — shows file search details and full error tracebacks
-google-reviews-download -v
+google-reviews-client -v
 ```
 
 #### First run

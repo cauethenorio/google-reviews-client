@@ -27,7 +27,7 @@ dependencies = [
 ]
 
 [project.scripts]
-google-reviews-download = "google_reviews_client.cli:main"
+google-reviews-client = "google_reviews_client.cli:main"
 
 [project.optional-dependencies]
 cli = ["click>=8.3.1"]
