@@ -1,6 +1,6 @@
 [project]
 name = "google-reviews-client"
-version = "0.1.0"
+version = "0.2.0"
 description = "A lightweight Python client for Google Business Profile reviews and locations (non-official)"
 authors = [{ name = "Cauê Thenório", email = "caue@thenorio.com.br" }]
 readme = "README.md"

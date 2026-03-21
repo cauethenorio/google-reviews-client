@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-03-20
+
+### Changed
+
+- CLI command renamed from `google-reviews` to `google-reviews-client`
+- `click` is now an optional dependency — install with `pip install google-reviews-client[cli]`
+- CLI can be run directly with `uvx 'google-reviews-client[cli]'` without installing
+
 ## [0.1.0] - 2026-03-20
 
 ### Added
