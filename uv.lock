@@ -475,6 +475,7 @@ cli = [
 [package.dev-dependencies]
 dev = [
     { name = "click" },
+    { name = "coverage", extra = ["toml"] },
     { name = "pytest" },
     { name = "pytest-cov" },
     { name = "ruff" },
@@ -494,6 +495,7 @@ provides-extras = ["cli"]
 [package.metadata.requires-dev]
 dev = [
     { name = "click", specifier = ">=8.3.1" },
+    { name = "coverage", extras = ["toml"], specifier = ">=6.5" },
     { name = "pytest", specifier = ">=7.2.0" },
     { name = "pytest-cov", specifier = ">=4.0.0" },
     { name = "ruff", specifier = ">=0.11.5" },

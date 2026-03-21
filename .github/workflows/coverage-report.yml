@@ -12,7 +12,8 @@ jobs:
       - uses: astral-sh/setup-uv@v7
         with:
           enable-cache: true
-      - run: uv run python -m pytest --cov --cov-config=pyproject.toml --cov-report=xml
+      - run: make test-cov
+      - run: make cov-xml
       - uses: codecov/codecov-action@v5
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}

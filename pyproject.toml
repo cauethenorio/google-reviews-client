@@ -42,6 +42,7 @@ dev = [
     "pytest>=7.2.0",
     "tox-uv>=1.11.3",
     "ty>=0.0.1a16",
+    "coverage[toml]>=6.5",
     "pytest-cov>=4.0.0",
     "ruff>=0.11.5",
     "click>=8.3.1",
@@ -149,7 +150,7 @@ ignore = [
     ban-relative-imports = "parents"
 
 [tool.ruff.lint.per-file-ignores]
-"tests/*" = ["S101", "PLR2004"]
+"tests/*" = ["S101", "S105", "PLR2004", "PLR0913", "FBT002", "PLC0415", "ARG001", "RUF059"]
 "src/google_reviews_client/cli/__init__.py" = ["C901", "PLR0912", "PLR0915", "PLC0415"]
 
 [tool.ruff.format]

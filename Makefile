@@ -21,7 +21,22 @@ check: ## Run all code quality tools.
 .PHONY: test
 test: ## Test the code with pytest
 	@echo "🚀 Testing code: Running pytest"
-	@uv run python -m pytest --cov --cov-config=pyproject.toml --cov-report=xml
+	@uv run python -m pytest
+
+.PHONY: test-cov
+test-cov: ## Run tests with coverage
+	@uv run python -m coverage run -m pytest tests
+
+.PHONY: cov-report
+cov-report: ## Generate HTML coverage report
+	@uv run python -m coverage html
+
+.PHONY: cov-xml
+cov-xml: ## Generate XML coverage report (for CI)
+	@uv run python -m coverage xml
+
+.PHONY: cov
+cov: test-cov cov-report ## Run tests with coverage and open report
 
 .PHONY: build
 build: clean-build ## Build wheel file
