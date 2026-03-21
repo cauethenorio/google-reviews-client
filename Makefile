@@ -25,15 +25,17 @@ test: ## Test the code with pytest
 
 .PHONY: test-cov
 test-cov: ## Run tests with coverage
-	@uv run python -m coverage run -m pytest tests
+	@uv run coverage run -m pytest tests
 
 .PHONY: cov-report
 cov-report: ## Generate HTML coverage report
-	@uv run python -m coverage html
+	@uv run coverage combine
+	@uv run coverage html
 
 .PHONY: cov-xml
 cov-xml: ## Generate XML coverage report (for CI)
-	@uv run python -m coverage xml
+	@uv run coverage combine
+	@uv run coverage xml
 
 .PHONY: cov
 cov: test-cov cov-report ## Run tests with coverage and open report

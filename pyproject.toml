@@ -162,6 +162,7 @@ skip_empty = true
 [tool.coverage.run]
 branch = true
 source = ["src"]
+parallel = true
 
 [tool.uv.workspace]
 members = []
