@@ -23,14 +23,16 @@ classifiers = [
 dependencies = [
     "httpx>=0.24.0",
     "google-auth>=2.0",
-    "google-auth-oauthlib>=1.3.0",
 ]
 
 [project.scripts]
 google-reviews-client = "google_reviews_client.cli:main"
 
 [project.optional-dependencies]
-cli = ["click>=8.3.1"]
+cli = [
+    "click>=8.3.1",
+    "google-auth-oauthlib>=1.3.0",
+]
 
 [project.urls]
 Homepage = "https://github.com/cauethenorio/google-reviews-client"
@@ -46,14 +48,26 @@ dev = [
     "pytest-cov>=4.0.0",
     "ruff>=0.11.5",
     "click>=8.3.1",
+    "google-auth-oauthlib>=1.3.0",
 ]
 
 [build-system]
 requires = ["uv_build>=0.9.8,<0.10.0"]
 build-backend = "uv_build"
 
-[tool.hatch.build.targets.wheel]
-packages = ["src/google_reviews_client"]
+[tool.uv.build-backend]
+source-exclude = [
+    "credentials*.json",
+    "client_secret*.json",
+    "*_client_secret*.json",
+    "tokens.json",
+    "*.tokens.json",
+    "reviews*.jsonl",
+    "reviews.json",
+    "google-reviews-config.*.json",
+    "*.json.old",
+    "_tokens.json",
+]
 
 [tool.ty.environment]
 python = "./.venv"
@@ -68,38 +82,6 @@ line-length = 120
 fix = true
 
 [tool.ruff.lint]
-#select = [
-#    # flake8-2020
-#    "YTT",
-#    # flake8-bandit
-#    "S",
-#    # flake8-bugbear
-#    "B",
-#    # flake8-builtins
-#    "A",
-#    # flake8-comprehensions
-#    "C4",
-#    # flake8-debugger
-#    "T10",
-#    # flake8-simplify
-#    "SIM",
-#    # isort
-#    "I",
-#    # mccabe
-#    "C90",
-#    # pycodestyle
-#    "E", "W",
-#    # pyflakes
-#    "F",
-#    # pygrep-hooks
-#    "PGH",
-#    # pyupgrade
-#    "UP",
-#    # ruff
-#    "RUF",
-#    # tryceratops
-#    "TRY",
-#]
 select = [
             "A",
             "ARG",
