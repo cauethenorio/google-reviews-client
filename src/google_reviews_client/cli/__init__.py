@@ -16,6 +16,29 @@ import unicodedata
 from datetime import datetime
 from pathlib import Path
 
+
+def _check_cli_deps():
+    """Verify CLI dependencies are installed."""
+    missing = []
+    try:
+        import click  # noqa: F401
+    except ImportError:
+        missing.append("click")
+    try:
+        import google_auth_oauthlib  # noqa: F401
+    except ImportError:
+        missing.append("google-auth-oauthlib")
+    if missing:
+        print(
+            f"Missing CLI dependencies: {', '.join(missing)}\n"
+            f"Install with: pip install google-reviews-client[cli]",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+
+
+_check_cli_deps()
+
 import click
 
 from google_reviews_client.client import GoogleReviewsClient
