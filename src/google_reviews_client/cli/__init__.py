@@ -30,8 +30,7 @@ def _check_cli_deps():
         missing.append("google-auth-oauthlib")
     if missing:
         print(
-            f"Missing CLI dependencies: {', '.join(missing)}\n"
-            f"Install with: pip install google-reviews-client[cli]",
+            f"Missing CLI dependencies: {', '.join(missing)}\nInstall with: pip install google-reviews-client[cli]",
             file=sys.stderr,
         )
         sys.exit(1)
@@ -446,7 +445,6 @@ def sync_target(
 @add_verbose_option([logger, auth_logger, http_logger, config_logger])
 def main(client_secrets_file, config_file, user_specified_language, verbose):
     """Download all your Google Business reviews."""
-
     print_banner()
     cwd = Path.cwd()
 

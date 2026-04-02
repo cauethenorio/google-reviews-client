@@ -83,6 +83,7 @@ select = [
             "B9",
             "C",
             "C4",
+            "D", # pydocstyle (https://docs.astral.sh/ruff/rules/#pydocstyle-d)
             "DTZ",
             "E", # pycodestyle errors (https://docs.astral.sh/ruff/rules/#error-e)
             "EM",
@@ -125,9 +126,12 @@ ignore = [
 [tool.ruff.lint.flake8-tidy-imports]
     ban-relative-imports = "parents"
 
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
 [tool.ruff.lint.per-file-ignores]
-"tests/*" = ["S101", "S105", "PLR2004", "PLR0913", "FBT002", "PLC0415", "ARG001", "RUF059"]
-"src/google_reviews_client/cli/__init__.py" = ["C901", "PLR0912", "PLR0915", "PLC0415"]
+"tests/*" = ["S101", "S105", "PLR2004", "PLR0913", "FBT002", "PLC0415", "ARG001", "RUF059", "S603", "S607", "TRY003", "EM102", "D"]
+"src/google_reviews_client/cli/__init__.py" = ["C901", "PLR0912", "PLR0915", "PLC0415", "E402", "T201"]
 
 [tool.ruff.format]
 preview = true

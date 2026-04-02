@@ -131,8 +131,7 @@ class Review:
 
 @dataclass
 class Location:
-    """
-    https://developers.google.com/my-business/reference/businessinformation/rest/v1/accounts.locations
+    """https://developers.google.com/my-business/reference/businessinformation/rest/v1/accounts.locations
 
     Google Business location.
     """
@@ -174,8 +173,7 @@ class Location:
 
 @dataclass
 class Account:
-    """
-    https://developers.google.com/my-business/reference/accountmanagement/rest/v1/accounts#resource:-account
+    """https://developers.google.com/my-business/reference/accountmanagement/rest/v1/accounts#resource:-account
 
     An account is a container for your location. If you are the only user who manages locations for your business,
     you can use your personal Google Account.

@@ -8,10 +8,10 @@ from google_reviews_client.client import GoogleReviewsClient, _HttpxAuthRequest,
 from google_reviews_client.exceptions import (
     AuthenticationError,
     GoogleAPIError,
+    GooglePermissionError,
     GoogleReviewsError,
     HTTPError,
     NotFoundError,
-    PermissionError,  # noqa: A004
     RateLimitError,
 )
 from google_reviews_client.http_client import BaseHTTPClient
@@ -94,9 +94,9 @@ class TestAuthenticatedGet:
 
         try:
             client._authenticated_get("https://example.com/api")
-            msg = "Expected PermissionError"
+            msg = "Expected GooglePermissionError"
             raise AssertionError(msg)
-        except PermissionError as e:
+        except GooglePermissionError as e:
             assert e.body == '{"error": "forbidden"}'
 
     def test_maps_404_to_not_found_error(self):

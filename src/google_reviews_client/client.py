@@ -11,10 +11,10 @@ from .constants import ACCOUNT_MGMT_BASE, BUSINESS_BASE, LOCATION_ALL_FIELDS
 from .exceptions import (
     AuthenticationError,
     GoogleAPIError,
+    GooglePermissionError,
     GoogleReviewsError,
     HTTPError,
     NotFoundError,
-    PermissionError,  # noqa: A004
     RateLimitError,
 )
 from .http_client.base_client import BaseHTTPClient
@@ -43,7 +43,7 @@ class _HttpxAuthRequest(google.auth.transport.Request):
 
 _STATUS_TO_EXCEPTION = {
     HTTPStatus.UNAUTHORIZED: AuthenticationError,
-    HTTPStatus.FORBIDDEN: PermissionError,
+    HTTPStatus.FORBIDDEN: GooglePermissionError,
     HTTPStatus.NOT_FOUND: NotFoundError,
     HTTPStatus.TOO_MANY_REQUESTS: RateLimitError,
 }

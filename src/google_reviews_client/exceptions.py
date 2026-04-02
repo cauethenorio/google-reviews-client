@@ -10,7 +10,7 @@ class AuthenticationError(GoogleReviewsError):
     """Authentication failed (401)."""
 
 
-class PermissionError(GoogleReviewsError):  # noqa: A001
+class GooglePermissionError(GoogleReviewsError):
     """Insufficient permissions (403)."""
 
 

@@ -1,10 +1,10 @@
 from google_reviews_client.exceptions import (
     AuthenticationError,
     GoogleAPIError,
+    GooglePermissionError,
     GoogleReviewsError,
     HTTPError,
     NotFoundError,
-    PermissionError,  # noqa: A004
     RateLimitError,
     ValidationError,
 )
@@ -36,10 +36,10 @@ class TestDomainExceptions:
         assert err.body == '{"error": "invalid"}'
 
     def test_permission_error_inherits(self):
-        assert issubclass(PermissionError, GoogleReviewsError)
+        assert issubclass(GooglePermissionError, GoogleReviewsError)
 
     def test_permission_error_body(self):
-        err = PermissionError("forbidden", body='{"error": "forbidden"}')
+        err = GooglePermissionError("forbidden", body='{"error": "forbidden"}')
         assert err.body == '{"error": "forbidden"}'
 
     def test_not_found_error_inherits(self):

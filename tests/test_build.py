@@ -34,6 +34,7 @@ class TestBuildHygiene:
         """Built wheel must not contain credential or data files."""
         result = subprocess.run(
             ["uv", "build", "--wheel", "--out-dir", str(tmp_path)],
+            check=False,
             capture_output=True,
             text=True,
             cwd=PROJECT_ROOT,
@@ -49,35 +50,29 @@ class TestBuildHygiene:
                 basename = Path(name).name.lower()
                 for pattern in CREDENTIAL_PATTERNS:
                     if pattern in basename and basename.endswith((".json", ".jsonl", ".json.old")):
-                        raise AssertionError(
-                            f"Credential/data file found in wheel: {name}"
-                        )
+                        raise AssertionError(f"Credential/data file found in wheel: {name}")
 
 
 class TestDependencySeparation:
     def test_oauthlib_not_in_core_dependencies(self):
         """google-auth-oauthlib must not be a core dependency."""
-        with open(PYPROJECT_PATH, "rb") as f:
+        with PYPROJECT_PATH.open("rb") as f:
             config = tomllib.load(f)
         deps = config["project"]["dependencies"]
         for dep in deps:
-            assert "google-auth-oauthlib" not in dep, (
-                f"google-auth-oauthlib found in core dependencies: {dep}"
-            )
+            assert "google-auth-oauthlib" not in dep, f"google-auth-oauthlib found in core dependencies: {dep}"
 
     def test_oauthlib_in_cli_extra(self):
         """google-auth-oauthlib must be in [cli] optional extra."""
-        with open(PYPROJECT_PATH, "rb") as f:
+        with PYPROJECT_PATH.open("rb") as f:
             config = tomllib.load(f)
         cli_deps = config["project"]["optional-dependencies"]["cli"]
         oauthlib_found = any("google-auth-oauthlib" in dep for dep in cli_deps)
-        assert oauthlib_found, (
-            f"google-auth-oauthlib not found in cli extra: {cli_deps}"
-        )
+        assert oauthlib_found, f"google-auth-oauthlib not found in cli extra: {cli_deps}"
 
     def test_click_in_cli_extra(self):
         """click must be in [cli] optional extra."""
-        with open(PYPROJECT_PATH, "rb") as f:
+        with PYPROJECT_PATH.open("rb") as f:
             config = tomllib.load(f)
         cli_deps = config["project"]["optional-dependencies"]["cli"]
         click_found = any("click" in dep for dep in cli_deps)
@@ -94,6 +89,4 @@ class TestDependencySeparation:
         init_path = PROJECT_ROOT / "src" / "google_reviews_client" / "__init__.py"
         content = init_path.read_text()
         assert "import click" not in content, "__init__.py must not import click"
-        assert "google_auth_oauthlib" not in content, (
-            "__init__.py must not import google_auth_oauthlib"
-        )
+        assert "google_auth_oauthlib" not in content, "__init__.py must not import google_auth_oauthlib"

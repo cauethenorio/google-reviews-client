@@ -54,11 +54,9 @@ def configure_logger(logger):
 
 
 def add_verbose_option(loggers):
-    """
-    A decorator that adds a `--verbose, -v` option to the decorated command and
+    """A decorator that adds a `--verbose, -v` option to the decorated command and
     configure adds a handler to the logger.
     """
-
     for logger in loggers:
         configure_logger(logger)
 
