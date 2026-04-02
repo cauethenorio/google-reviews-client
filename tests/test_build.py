@@ -34,7 +34,8 @@ class TestBuildHygiene:
         """Built wheel must not contain credential or data files."""
         result = subprocess.run(
             ["uv", "build", "--wheel", "--out-dir", str(tmp_path)],
-            check=False, capture_output=True,
+            check=False,
+            capture_output=True,
             text=True,
             cwd=PROJECT_ROOT,
         )
