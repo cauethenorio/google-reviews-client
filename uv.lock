@@ -463,19 +463,20 @@ version = "0.2.0"
 source = { editable = "." }
 dependencies = [
     { name = "google-auth" },
-    { name = "google-auth-oauthlib" },
     { name = "httpx" },
 ]
 
 [package.optional-dependencies]
 cli = [
     { name = "click" },
+    { name = "google-auth-oauthlib" },
 ]
 
 [package.dev-dependencies]
 dev = [
     { name = "click" },
     { name = "coverage", extra = ["toml"] },
+    { name = "google-auth-oauthlib" },
     { name = "pytest" },
     { name = "pytest-cov" },
     { name = "ruff" },
@@ -487,7 +488,7 @@ dev = [
 requires-dist = [
     { name = "click", marker = "extra == 'cli'", specifier = ">=8.3.1" },
     { name = "google-auth", specifier = ">=2.0" },
-    { name = "google-auth-oauthlib", specifier = ">=1.3.0" },
+    { name = "google-auth-oauthlib", marker = "extra == 'cli'", specifier = ">=1.3.0" },
     { name = "httpx", specifier = ">=0.24.0" },
 ]
 provides-extras = ["cli"]
@@ -496,6 +497,7 @@ provides-extras = ["cli"]
 dev = [
     { name = "click", specifier = ">=8.3.1" },
     { name = "coverage", extras = ["toml"], specifier = ">=6.5" },
+    { name = "google-auth-oauthlib", specifier = ">=1.3.0" },
     { name = "pytest", specifier = ">=7.2.0" },
     { name = "pytest-cov", specifier = ">=4.0.0" },
     { name = "ruff", specifier = ">=0.11.5" },

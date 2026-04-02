@@ -353,7 +353,8 @@ class TestListReviews:
     def test_since_filters_old_reviews(self):
         """When since is set, reviews are ordered by updateTime desc and
         iteration stops as soon as we hit a review <= since (early exit).
-        Mock data must reflect this desc ordering."""
+        Mock data must reflect this desc ordering.
+        """
         client = self._make_client()
         client.http_client.get.return_value = {
             "reviews": [

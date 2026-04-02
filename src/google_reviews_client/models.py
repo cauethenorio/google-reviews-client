@@ -155,6 +155,7 @@ class Location:
         Args:
             data: API response dict for a single location.
             account: Account resource name (e.g., "accounts/123").
+
         """
         name = data.get("name", "")
         # Extract location_id from resource name (e.g., "locations/987" -> "987")

@@ -34,8 +34,7 @@ class TestBuildHygiene:
         """Built wheel must not contain credential or data files."""
         result = subprocess.run(
             ["uv", "build", "--wheel", "--out-dir", str(tmp_path)],
-            check=False,
-            capture_output=True,
+            check=False, capture_output=True,
             text=True,
             cwd=PROJECT_ROOT,
         )
@@ -71,7 +70,7 @@ class TestDependencySeparation:
         assert oauthlib_found, f"google-auth-oauthlib not found in cli extra: {cli_deps}"
 
     def test_click_in_cli_extra(self):
-        """click must be in [cli] optional extra."""
+        """Click must be in [cli] optional extra."""
         with PYPROJECT_PATH.open("rb") as f:
             config = tomllib.load(f)
         cli_deps = config["project"]["optional-dependencies"]["cli"]
