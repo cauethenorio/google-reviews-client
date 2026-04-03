@@ -1,12 +1,10 @@
 """Tests for uncovered code paths in cli/__init__.py."""
 
 import json
-import logging
 from datetime import datetime, timezone
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-import click
 from click.testing import CliRunner
 
 from google_reviews_client.cli import (
@@ -54,7 +52,8 @@ class TestCheckCliDeps:
 
         def fake_import(name, *args, **kwargs):
             if name == "click":
-                raise ImportError("No module named 'click'")
+                msg = "No module named 'click'"
+                raise ImportError(msg)
             return original_import(name, *args, **kwargs)
 
         with (
@@ -79,7 +78,8 @@ class TestCheckCliDeps:
 
         def fake_import(name, *args, **kwargs):
             if name == "google_auth_oauthlib":
-                raise ImportError("No module named 'google_auth_oauthlib'")
+                msg = "No module named 'google_auth_oauthlib'"
+                raise ImportError(msg)
             return original_import(name, *args, **kwargs)
 
         with (

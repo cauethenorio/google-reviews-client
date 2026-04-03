@@ -56,6 +56,35 @@ class TestHttpxHTTPClient:
             assert mock_get.call_count == 1
 
 
+class TestParseRetryAfter:
+    def test_parse_retry_after_non_numeric(self):
+        from google_reviews_client.http_client.httpx_client import _parse_retry_after
+
+        headers = httpx.Headers({"retry-after": "not-a-number"})
+        assert _parse_retry_after(headers) is None
+
+    def test_parse_retry_after_missing(self):
+        from google_reviews_client.http_client.httpx_client import _parse_retry_after
+
+        headers = httpx.Headers({})
+        assert _parse_retry_after(headers) is None
+
+
+class TestHttpxHTTPClientContextManager:
+    def test_context_manager_protocol(self):
+        client = HttpxHTTPClient()
+        with patch.object(client, "close") as mock_close:
+            with client as ctx:
+                assert ctx is client
+            mock_close.assert_called_once()
+
+    def test_close_method(self):
+        client = HttpxHTTPClient()
+        with patch.object(client._client, "close") as mock_close:
+            client.close()
+            mock_close.assert_called_once()
+
+
 class TestHttpxHTTPClientRetry:
     def test_retries_on_500_then_succeeds(self):
         client = HttpxHTTPClient(backoff_base=0.0)

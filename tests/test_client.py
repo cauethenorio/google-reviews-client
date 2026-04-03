@@ -181,6 +181,43 @@ class TestAuthenticatedGet:
             assert e.body == "I'm a teapot"
 
 
+class TestExtractRetryAfter:
+    def test_extract_retry_after_invalid_value(self):
+        from google_reviews_client.client import _extract_retry_after
+
+        assert _extract_retry_after({"Retry-After": "not-a-number"}) is None
+
+    def test_extract_retry_after_none_value(self):
+        from google_reviews_client.client import _extract_retry_after
+
+        assert _extract_retry_after({}) is None
+
+
+class TestMapStatusToException:
+    def test_unknown_status_code(self):
+        from google_reviews_client.client import _map_status_to_exception
+
+        exc = _map_status_to_exception(999, "unknown")
+        assert isinstance(exc, GoogleReviewsError)
+
+
+class TestAuthenticatedGetExtraHeaders:
+    def test_authenticated_get_with_extra_headers(self):
+        creds = Mock(spec=google.auth.credentials.Credentials)
+        client = GoogleReviewsClient(credentials=creds)
+        client.http_client = Mock(spec=BaseHTTPClient)
+        client.http_client.get.return_value = {"data": "ok"}
+
+        client._authenticated_get(
+            "https://example.com/api",
+            extra_headers={"Accept-Language": "pt-BR"},
+        )
+
+        call_kwargs = client.http_client.get.call_args
+        headers = call_kwargs.kwargs.get("headers", {})
+        assert headers.get("Accept-Language") == "pt-BR"
+
+
 class TestListAccounts:
     def test_list_accounts_returns_account_list(self):
         creds = Mock(spec=google.auth.credentials.Credentials)
