@@ -1,6 +1,5 @@
 """Shared pytest fixtures for google-reviews-client tests."""
 
-from pathlib import Path
 from unittest.mock import MagicMock
 
 import pytest
