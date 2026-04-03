@@ -341,7 +341,7 @@ class TestPrintQuotaError:
 
 class TestPrintApiError:
     def test_prints_error_message(self, capsys):
-        e = GoogleReviewsError("Something went wrong", body=None)
+        e = GoogleReviewsError("Something went wrong", body="")
         print_api_error(e, verbose=False)
         output = capsys.readouterr().out
         assert "Something went wrong" in output
