@@ -1,3 +1,5 @@
+"""Configuration file discovery, loading, and saving."""
+
 import json
 import logging
 from dataclasses import dataclass, field

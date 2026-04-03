@@ -1,3 +1,5 @@
+"""HTTP transport implementation using httpx with retry logic."""
+
 import logging
 import time
 
@@ -28,6 +30,13 @@ class HttpxHTTPClient(BaseHTTPClient):
     """Default HTTP transport using httpx."""
 
     def __init__(self, *, max_retries: int = _DEFAULT_MAX_RETRIES, backoff_base: float = _DEFAULT_BACKOFF_BASE):
+        """Initialize the httpx client with retry settings.
+
+        Args:
+            max_retries: Maximum number of retry attempts for retryable status codes.
+            backoff_base: Base delay in seconds for exponential backoff.
+
+        """
         self._client = httpx.Client(timeout=30)
         self._max_retries = max_retries
         self._backoff_base = backoff_base
@@ -37,12 +46,28 @@ class HttpxHTTPClient(BaseHTTPClient):
         self._client.close()
 
     def __enter__(self):
+        """Enter the context manager."""
         return self
 
     def __exit__(self, *_args):
+        """Exit the context manager and close connections."""
         self.close()
 
     def get(self, url: str, *, params: dict | None = None, headers: dict | None = None) -> dict:
+        """Make a GET request with automatic retries on transient errors.
+
+        Args:
+            url: Request URL.
+            params: Optional query parameters.
+            headers: Optional request headers.
+
+        Returns:
+            Parsed JSON response as a dict.
+
+        Raises:
+            HTTPError: If the request fails after all retry attempts.
+
+        """
         logger.debug("GET %s params=%s", url, params)
         last_response: httpx.Response | None = None
 

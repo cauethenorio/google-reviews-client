@@ -1,3 +1,5 @@
+"""High-level client for the Google Business Profile API."""
+
 import logging
 from collections.abc import Iterator
 from datetime import datetime
@@ -90,6 +92,12 @@ class GoogleReviewsClient:
     http_client_class: type[BaseHTTPClient] = HttpxHTTPClient
 
     def __init__(self, credentials: google.auth.credentials.Credentials):
+        """Initialize with Google auth credentials.
+
+        Args:
+            credentials: Authorized Google credentials for API access.
+
+        """
         self.credentials = credentials
         self.http_client = self.http_client_class()
 
@@ -107,11 +115,18 @@ class GoogleReviewsClient:
             raise _map_status_to_exception(e.status_code, e.body, e.headers) from e
 
     def list_accounts(self) -> list[Account]:
+        """List all Google Business Profile accounts for the authenticated user."""
         data = self._authenticated_get(f"{ACCOUNT_MGMT_BASE}/v1/accounts")
         # Google API returns {} instead of {"accounts": []} when there are no results
         return [Account.from_api_response(acc) for acc in data.get("accounts", [])]
 
     def list_locations(self, account: str) -> list[Location]:
+        """List all locations for the given account.
+
+        Args:
+            account: Account resource name (e.g., "accounts/123").
+
+        """
         data = self._authenticated_get(
             f"{ACCOUNT_MGMT_BASE}/v1/{account}/locations",
             params={"readMask": LOCATION_ALL_FIELDS},
@@ -126,6 +141,18 @@ class GoogleReviewsClient:
         order_by: str | None = None,
         language: str | None = None,
     ) -> Iterator[Review]:
+        """Iterate over reviews for the given location.
+
+        Args:
+            location: Location resource name (e.g., "accounts/123/locations/456").
+            since: Only yield reviews updated after this timestamp.
+            order_by: Sort order string (e.g., "updateTime desc").
+            language: Accept-Language header value for review translation.
+
+        Yields:
+            Review objects from the API, one at a time.
+
+        """
         url = f"{BUSINESS_BASE}/{location}/reviews"
         page_token = None
         extra_headers = {"Accept-Language": language} if language else None

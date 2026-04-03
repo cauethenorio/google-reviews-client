@@ -1,3 +1,5 @@
+"""OAuth authentication helpers for the CLI."""
+
 import json
 import logging
 from pathlib import Path
@@ -16,13 +18,21 @@ USERINFO_URL = "https://www.googleapis.com/oauth2/v3/userinfo"
 
 
 class MultipleFilesFoundError(Exception):
+    """Raised when multiple client secret files are found."""
+
     def __init__(self, files_found: list[Path]):
+        """Initialize with the list of conflicting file paths.
+
+        Args:
+            files_found: Paths to the discovered client secret files.
+
+        """
         self.files_found = files_found
         super().__init__(f"Multiple files found: {files_found}")
 
 
 class NotInstalledAppError(Exception):
-    pass
+    """Raised when client secrets are not for a desktop app."""
 
 
 def find_client_secrets_files(cwd: Path, explicit_path: Path | None = None) -> Path:

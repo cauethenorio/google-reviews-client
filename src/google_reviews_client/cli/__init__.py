@@ -72,6 +72,7 @@ config_logger = logging.getLogger("google_reviews_client.cli.config")
 
 
 def get_version() -> str:
+    """Return the installed package version string."""
     from importlib.metadata import PackageNotFoundError, version
 
     try:
@@ -81,6 +82,7 @@ def get_version() -> str:
 
 
 def print_banner() -> None:
+    """Print the CLI banner with version and working directory."""
     click.echo(click.style(f"google-reviews-client v{get_version()}", bold=True))
     click.echo(click.style(f"Directory: {Path.cwd()}", dim=True))
     click.echo()
@@ -153,15 +155,18 @@ MIN_COMMENT_WIDTH = 20
 
 
 def get_comment_width() -> int:
+    """Calculate the available terminal width for the review comment column."""
     term_width = shutil.get_terminal_size().columns
     return max(term_width - FIXED_COLS_WIDTH, MIN_COMMENT_WIDTH)
 
 
 def format_stars(rating: int) -> str:
+    """Format a numeric rating as star emoji characters."""
     return "\u2b50" * rating + "  " * (5 - rating) + " "
 
 
 def print_reviews_table_header() -> None:
+    """Print the column header row for the reviews table."""
     comment_width = get_comment_width()
     rating_padding = " " * (STARS_DISPLAY_WIDTH - 6)  # 6 = len("Rating")
     header = f"{'Date':<12}Rating{rating_padding}{'Review':<{comment_width}}{'Reviewer':<{REVIEWER_WIDTH}}Replied"
@@ -170,6 +175,7 @@ def print_reviews_table_header() -> None:
 
 
 def print_review_row(review) -> None:
+    """Print a single review as a formatted table row."""
     comment_width = get_comment_width()
     comment = review.comment.replace("\n", " ")
     comment = truncate_to_width(comment, comment_width)

@@ -1,3 +1,5 @@
+"""Google Reviews Client -- a lightweight Python client for Google Business Profile reviews."""
+
 from importlib.metadata import PackageNotFoundError, version
 
 try:

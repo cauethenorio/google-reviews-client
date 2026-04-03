@@ -1,3 +1,5 @@
+"""Click-integrated logging with color formatting."""
+
 import logging
 from typing import ClassVar
 
@@ -5,6 +7,8 @@ import click
 
 
 class ColorFormatter(logging.Formatter):
+    """Log formatter that applies click color styles to messages."""
+
     colors: ClassVar[dict] = {
         "DEBUG": {"fg": "blue"},
         "WARNING": {"fg": "yellow"},
@@ -13,6 +17,7 @@ class ColorFormatter(logging.Formatter):
     }
 
     def formatMessage(self, record):  # noqa: N802
+        """Format the log record message with color and indentation."""
         level = record.levelname.upper()
 
         msg = record.getMessage()
@@ -31,7 +36,10 @@ class ColorFormatter(logging.Formatter):
 
 
 class ClickHandler(logging.Handler):
+    """Log handler that outputs via click.echo."""
+
     def emit(self, record):
+        """Emit a log record via click.echo."""
         try:
             msg = self.format(record)
             is_error = record.levelname.upper() in [
@@ -49,13 +57,20 @@ _default_handler.formatter = ColorFormatter()
 
 
 def configure_logger(logger):
+    """Configure a logger to use the click handler."""
     logger.handlers = [_default_handler]
     logger.propagate = False
 
 
 def add_verbose_option(loggers):
-    """A decorator that adds a `--verbose, -v` option to the decorated command and
-    configure adds a handler to the logger.
+    """Add a ``--verbose`` / ``-v`` flag to the decorated click command.
+
+    Configures each logger's level to DEBUG when the flag is set,
+    or INFO otherwise.
+
+    Args:
+        loggers: Logger instances to configure.
+
     """
     for logger in loggers:
         configure_logger(logger)

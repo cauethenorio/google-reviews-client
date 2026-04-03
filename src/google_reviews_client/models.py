@@ -1,3 +1,5 @@
+"""Data models for Google Business Profile API responses."""
+
 from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
@@ -131,9 +133,10 @@ class Review:
 
 @dataclass
 class Location:
-    """https://developers.google.com/my-business/reference/businessinformation/rest/v1/accounts.locations
+    """Google Business location.
 
-    Google Business location.
+    See: https://developers.google.com/my-business/reference/businessinformation/rest/v1/accounts.locations
+
     """
 
     name: str
@@ -174,10 +177,14 @@ class Location:
 
 @dataclass
 class Account:
-    """https://developers.google.com/my-business/reference/accountmanagement/rest/v1/accounts#resource:-account
+    """Google Business Profile account.
 
-    An account is a container for your location. If you are the only user who manages locations for your business,
-    you can use your personal Google Account.
+    An account is a container for your location. If you are the only user
+    who manages locations for your business, you can use your personal
+    Google Account.
+
+    See: https://developers.google.com/my-business/reference/accountmanagement/rest/v1/accounts#resource:-account
+
     """
 
     name: str

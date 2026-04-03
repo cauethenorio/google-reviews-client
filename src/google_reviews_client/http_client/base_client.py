@@ -1,3 +1,5 @@
+"""Abstract base class for HTTP transport."""
+
 from abc import ABC, abstractmethod
 
 
