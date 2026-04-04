@@ -14,12 +14,12 @@
 
 ### Data Browsing
 
-- [ ] **DATA-01**: User can view a list of all Google Business Profile accounts they have access to
-- [ ] **DATA-02**: User can click an account to view its locations with name and address
-- [ ] **DATA-03**: User can click a location to view its reviews with star rating, text, author, date, and replies
-- [ ] **DATA-04**: Reviews are paginated via nextPageToken passed as a URL query parameter
-- [ ] **DATA-05**: Empty states (no accounts, no locations, no reviews) show explanatory messages
-- [ ] **DATA-06**: API errors (403, 429, 503) show human-readable error pages with retry/re-auth options
+- [x] **DATA-01**: User can view a list of all Google Business Profile accounts they have access to
+- [x] **DATA-02**: User can click an account to view its locations with name and address
+- [x] **DATA-03**: User can click a location to view its reviews with star rating, text, author, date, and replies
+- [x] **DATA-04**: Reviews are paginated via nextPageToken passed as a URL query parameter
+- [x] **DATA-05**: Empty states (no accounts, no locations, no reviews) show explanatory messages
+- [x] **DATA-06**: API errors (403, 429, 503) show human-readable error pages with retry/re-auth options
 
 ### User Experience
 
@@ -27,7 +27,7 @@
 - [x] **UX-02**: Landing page includes a "no data stored" trust statement
 - [ ] **UX-03**: Star ratings are displayed visually (★★★★☆)
 - [ ] **UX-04**: Reviewer photos are displayed with fallback for anonymous reviewers
-- [ ] **UX-05**: Breadcrumb navigation shows Account → Location → Reviews hierarchy
+- [x] **UX-05**: Breadcrumb navigation shows Account → Location → Reviews hierarchy
 - [ ] **UX-06**: Reviews page shows total review count and average rating summary
 - [ ] **UX-07**: Reviews page shows a copy-pasteable library usage code snippet
 
@@ -71,17 +71,17 @@
 | AUTH-02 | Phase 2 | Complete |
 | AUTH-03 | Phase 2 | Complete |
 | AUTH-04 | Phase 2 | Complete |
-| DATA-01 | Phase 3 | Pending |
-| DATA-02 | Phase 3 | Pending |
-| DATA-03 | Phase 3 | Pending |
-| DATA-04 | Phase 3 | Pending |
-| DATA-05 | Phase 3 | Pending |
-| DATA-06 | Phase 3 | Pending |
+| DATA-01 | Phase 3 | Complete |
+| DATA-02 | Phase 3 | Complete |
+| DATA-03 | Phase 3 | Complete |
+| DATA-04 | Phase 3 | Complete |
+| DATA-05 | Phase 3 | Complete |
+| DATA-06 | Phase 3 | Complete |
 | UX-01 | Phase 2 | Complete |
 | UX-02 | Phase 2 | Complete |
 | UX-03 | Phase 4 | Pending |
 | UX-04 | Phase 4 | Pending |
-| UX-05 | Phase 3 | Pending |
+| UX-05 | Phase 3 | Complete |
 | UX-06 | Phase 4 | Pending |
 | UX-07 | Phase 4 | Pending |
 | INFRA-01 | Phase 1 | Complete |
@@ -95,4 +95,4 @@
 
 ---
 *Requirements defined: 2026-04-03*
-*Last updated: 2026-04-03 after roadmap creation*
+*Last updated: 2026-04-04 after plan 03-01 completion*

@@ -61,8 +61,8 @@ Plans:
   6. API errors (403, 429, 503) show a human-readable error page with retry or re-auth options
 **Plans**: 2 plans
 Plans:
-- [ ] 03-01-PLAN.md — API helper, templates, routes for accounts/locations/reviews browsing
-- [ ] 03-02-PLAN.md — Test suite for all data browsing routes, error handling, pagination
+- [x] 03-01-PLAN.md — API helper, templates, routes for accounts/locations/reviews browsing
+- [x] 03-02-PLAN.md — Test suite for all data browsing routes, error handling, pagination
 **UI hint**: yes
 
 ### Phase 4: Polish
@@ -86,5 +86,5 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 |-------|----------------|--------|-----------|
 | 1. Foundation | 2/2 | Complete | 2026-04-04 |
 | 2. Auth and Landing | 2/2 | Complete | 2026-04-04 |
-| 3. Data Browsing | 0/2 | In progress | - |
+| 3. Data Browsing | 2/2 | Complete | 2026-04-04 |
 | 4. Polish | 0/? | Not started | - |
