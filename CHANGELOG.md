@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-04-03
+
+### Breaking Changes
+
+- `PermissionError` renamed to `GooglePermissionError`
+
+### Added
+
+- Retry with exponential backoff in HTTP client
+- `__version__` attribute exposed in the package
+- Python 3.14 support
+
+### Improved
+
+- Complete docstrings on all public modules, classes, and methods
+- Significantly expanded test coverage
+- Restructured dependencies and build configuration
+- README updated with correct exception names
+
 ## [0.2.0] - 2026-03-20
 
 ### Changed
