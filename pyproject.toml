@@ -140,6 +140,7 @@ convention = "google"
 
 [tool.ruff.lint.per-file-ignores]
 "tests/*" = ["S101", "S105", "PLR2004", "PLR0913", "FBT002", "PLC0415", "ARG001", "RUF059", "S603", "S607", "TRY003", "EM102", "D"]
+"flask-example/tests/*" = ["S101", "S105", "PLR2004", "PLR0913", "FBT002", "PLC0415", "ARG001", "ARG002", "RUF059", "S603", "S607", "TRY003", "EM102", "D"]
 "src/google_reviews_client/cli/__init__.py" = ["C901", "PLR0912", "PLR0915", "PLC0415", "E402", "T201"]
 
 [tool.ruff.format]
