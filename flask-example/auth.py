@@ -3,7 +3,7 @@
 import os
 from functools import wraps
 
-from flask import Blueprint, redirect, request, url_for, current_app
+from flask import Blueprint, make_response, redirect, render_template, request, url_for, current_app
 from google_auth_oauthlib.flow import Flow
 
 from cookies import encrypt_tokens, decrypt_tokens, TOKEN_COOKIE_NAME, COOKIE_MAX_AGE
@@ -132,7 +132,7 @@ def callback():
     }
     encrypted = encrypt_tokens(token_data, current_app.config["FERNET"])
 
-    response = redirect("/accounts")
+    response = make_response(render_template("callback_success.html", show_logout=True))
     response.set_cookie(
         TOKEN_COOKIE_NAME,
         encrypted,
