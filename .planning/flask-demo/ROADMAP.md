@@ -45,7 +45,7 @@ Plans:
   5. Visiting a protected page with an expired or missing token redirects to the landing page with a message
 **Plans**: 2 plans
 Plans:
-- [ ] 02-01-PLAN.md — OAuth routes (login/callback/logout), login_required decorator, landing page, placeholder accounts
+- [x] 02-01-PLAN.md — OAuth routes (login/callback/logout), login_required decorator, landing page, placeholder accounts
 - [ ] 02-02-PLAN.md — Test suite for auth flow, landing page content, login_required protection
 
 ### Phase 3: Data Browsing
@@ -82,6 +82,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Foundation | 2/2 | Complete | 2026-04-04 |
-| 2. Auth and Landing | 0/2 | In progress | - |
+| 2. Auth and Landing | 1/2 | In progress | - |
 | 3. Data Browsing | 0/? | Not started | - |
 | 4. Polish | 0/? | Not started | - |

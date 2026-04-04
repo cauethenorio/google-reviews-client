@@ -7,10 +7,10 @@
 
 ### Authentication
 
-- [ ] **AUTH-01**: User can sign in with Google via OAuth 2.0 with PKCE and state parameter
-- [ ] **AUTH-02**: OAuth callback exchanges code for tokens and stores them in a Fernet-encrypted cookie
-- [ ] **AUTH-03**: User can log out, clearing the encrypted cookie
-- [ ] **AUTH-04**: Expired or invalid tokens are detected and user is redirected to re-authenticate with a clear message
+- [x] **AUTH-01**: User can sign in with Google via OAuth 2.0 with PKCE and state parameter
+- [x] **AUTH-02**: OAuth callback exchanges code for tokens and stores them in a Fernet-encrypted cookie
+- [x] **AUTH-03**: User can log out, clearing the encrypted cookie
+- [x] **AUTH-04**: Expired or invalid tokens are detected and user is redirected to re-authenticate with a clear message
 
 ### Data Browsing
 
@@ -23,8 +23,8 @@
 
 ### User Experience
 
-- [ ] **UX-01**: Landing page explains what the demo does and shows a "Sign in with Google" button
-- [ ] **UX-02**: Landing page includes a "no data stored" trust statement
+- [x] **UX-01**: Landing page explains what the demo does and shows a "Sign in with Google" button
+- [x] **UX-02**: Landing page includes a "no data stored" trust statement
 - [ ] **UX-03**: Star ratings are displayed visually (★★★★☆)
 - [ ] **UX-04**: Reviewer photos are displayed with fallback for anonymous reviewers
 - [ ] **UX-05**: Breadcrumb navigation shows Account → Location → Reviews hierarchy
@@ -67,18 +67,18 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| AUTH-01 | Phase 2 | Pending |
-| AUTH-02 | Phase 2 | Pending |
-| AUTH-03 | Phase 2 | Pending |
-| AUTH-04 | Phase 2 | Pending |
+| AUTH-01 | Phase 2 | Complete |
+| AUTH-02 | Phase 2 | Complete |
+| AUTH-03 | Phase 2 | Complete |
+| AUTH-04 | Phase 2 | Complete |
 | DATA-01 | Phase 3 | Pending |
 | DATA-02 | Phase 3 | Pending |
 | DATA-03 | Phase 3 | Pending |
 | DATA-04 | Phase 3 | Pending |
 | DATA-05 | Phase 3 | Pending |
 | DATA-06 | Phase 3 | Pending |
-| UX-01 | Phase 2 | Pending |
-| UX-02 | Phase 2 | Pending |
+| UX-01 | Phase 2 | Complete |
+| UX-02 | Phase 2 | Complete |
 | UX-03 | Phase 4 | Pending |
 | UX-04 | Phase 4 | Pending |
 | UX-05 | Phase 3 | Pending |

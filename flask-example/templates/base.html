@@ -8,8 +8,11 @@
 </head>
 <body class="bg-gray-50 min-h-screen">
     <nav class="bg-white shadow-sm">
-        <div class="max-w-4xl mx-auto px-4 py-3">
-            <a href="/" class="text-lg font-semibold text-gray-800">Google Reviews Demo</a>
+        <div class="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
+            <a href="/" class="text-lg font-bold text-gray-800">Google Reviews Demo</a>
+            {% if show_logout %}
+            <a href="/logout" class="text-gray-600 hover:text-gray-900">Log out</a>
+            {% endif %}
         </div>
     </nav>
     <main class="max-w-4xl mx-auto px-4 py-8">
