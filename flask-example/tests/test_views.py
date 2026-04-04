@@ -68,26 +68,3 @@ class TestLandingPage:
         """Landing page does not show Log out link (unauthenticated)."""
         response = client.get("/")
         assert b"Log out" not in response.data
-
-
-class TestAccountsPage:
-    """Test the accounts page behind login_required."""
-
-    def test_accounts_page_requires_auth(self, client):
-        """GET /accounts without cookie redirects (302)."""
-        response = client.get("/accounts")
-        assert response.status_code == 302
-
-    def test_accounts_page_shows_placeholder(self, client, authenticated_cookie):
-        """GET /accounts with auth cookie shows Phase 3 placeholder."""
-        client.set_cookie(TOKEN_COOKIE_NAME, authenticated_cookie)
-        response = client.get("/accounts")
-        assert response.status_code == 200
-        assert b"Accounts page coming in Phase 3" in response.data
-
-    def test_accounts_page_shows_logout_link(self, client, authenticated_cookie):
-        """GET /accounts with auth cookie shows Log out link."""
-        client.set_cookie(TOKEN_COOKIE_NAME, authenticated_cookie)
-        response = client.get("/accounts")
-        assert response.status_code == 200
-        assert b"Log out" in response.data

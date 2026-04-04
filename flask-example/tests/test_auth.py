@@ -117,7 +117,7 @@ class TestCallback:
     def test_callback_success_sets_authenticated_cookie(
         self, mock_flow_cls, client, pending_cookie, fernet
     ):
-        """Successful callback sets authenticated cookie and redirects to /accounts."""
+        """Successful callback renders success page with meta refresh."""
         mock_flow = MagicMock()
         mock_creds = MagicMock()
         mock_creds.token = "access-tok"
@@ -131,8 +131,9 @@ class TestCallback:
             "/callback?state=test-state-value&code=auth-code"
         )
 
-        assert response.status_code == 302
-        assert response.location.endswith("/accounts")
+        assert response.status_code == 200
+        assert b"Authenticated successfully!" in response.data
+        assert b'meta http-equiv="refresh"' in response.data
 
         # Verify the cookie contains authenticated data
         cookie_header = response.headers.get("Set-Cookie", "")
@@ -172,31 +173,22 @@ class TestLogout:
 class TestLoginRequired:
     """Test the login_required decorator (AUTH-04)."""
 
-    def test_accounts_without_cookie_redirects(self, client):
-        """GET /accounts with no cookie redirects to /?error=session_expired."""
-        response = client.get("/accounts")
+    def test_protected_route_without_cookie_redirects(self, client):
+        """GET /account/111 with no cookie redirects to /?error=session_expired."""
+        response = client.get("/account/111")
         assert response.status_code == 302
         assert "error=session_expired" in response.location
 
-    def test_accounts_with_invalid_cookie_redirects(self, client):
-        """GET /accounts with garbage cookie redirects to /?error=session_expired."""
+    def test_protected_route_with_invalid_cookie_redirects(self, client):
+        """GET /account/111 with garbage cookie redirects to /?error=session_expired."""
         client.set_cookie(TOKEN_COOKIE_NAME, "not-valid-fernet-data")
-        response = client.get("/accounts")
+        response = client.get("/account/111")
         assert response.status_code == 302
         assert "error=session_expired" in response.location
 
-    def test_accounts_with_pending_cookie_redirects(self, client, pending_cookie):
-        """GET /accounts with pending cookie redirects (not authenticated)."""
+    def test_protected_route_with_pending_cookie_redirects(self, client, pending_cookie):
+        """GET /account/111 with pending cookie redirects (not authenticated)."""
         client.set_cookie(TOKEN_COOKIE_NAME, pending_cookie)
-        response = client.get("/accounts")
+        response = client.get("/account/111")
         assert response.status_code == 302
         assert "error=session_expired" in response.location
-
-    def test_accounts_with_authenticated_cookie_succeeds(
-        self, client, authenticated_cookie
-    ):
-        """GET /accounts with valid authenticated cookie returns 200."""
-        client.set_cookie(TOKEN_COOKIE_NAME, authenticated_cookie)
-        response = client.get("/accounts")
-        assert response.status_code == 200
-        assert b"Accounts page coming in Phase 3" in response.data
