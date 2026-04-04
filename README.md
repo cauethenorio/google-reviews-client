@@ -333,6 +333,7 @@ for review in client.list_reviews(location.full_name, update_time=last_sync):
 from google_reviews_client import (
     GoogleReviewsClient,
     AuthenticationError,
+    GooglePermissionError,
     RateLimitError,
     NotFoundError,
 )
@@ -341,6 +342,8 @@ try:
     reviews = list(client.list_reviews(location.full_name))
 except AuthenticationError:
     print("Authentication failed. Check your credentials.")
+except GooglePermissionError:
+    print("Insufficient permissions. Check your account access.")
 except RateLimitError as e:
     print(f"Rate limited. Retry after {e.retry_after} seconds.")
 except NotFoundError:
@@ -384,10 +387,11 @@ with open("reviews.json", "w") as f:
 |-----------------------|---------------------------------------------------------|
 | `GoogleReviewsError`  | Base exception for all library errors                   |
 | `AuthenticationError` | 401 - invalid or expired credentials                    |
-| `PermissionError`     | 403 - insufficient permissions                          |
+| `GooglePermissionError` | 403 - insufficient permissions                        |
 | `NotFoundError`       | 404 - resource not found                                |
 | `RateLimitError`      | 429 - rate limit exceeded (has `retry_after` attribute) |
 | `GoogleAPIError`      | 5xx - Google API server error                           |
+| `HTTPError`           | Transport-level HTTP error (non-2xx, before domain mapping) |
 | `ValidationError`     | Invalid parameters                                      |
 
 ## Contributing
