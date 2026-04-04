@@ -1,20 +1,179 @@
-"""Views blueprint with index and accounts routes."""
+"""Views blueprint with data browsing routes and error handling."""
 
-from flask import Blueprint, render_template, request
+from flask import Blueprint, redirect, render_template, request
 
+from api import get_client, get_reviews_page
 from auth import login_required
+from cookies import TOKEN_COOKIE_NAME, decrypt_tokens
+from google_reviews_client.exceptions import (
+    AuthenticationError,
+    GoogleAPIError,
+    GooglePermissionError,
+    NotFoundError,
+    RateLimitError,
+)
+from google_reviews_client.models import Account
 
 views_bp = Blueprint("views", __name__)
 
 
+def _error_context(exc, back_url="/", back_text="Back to accounts"):
+    """Map library exception to error dict for template rendering."""
+    if isinstance(exc, GooglePermissionError):
+        return {"message": "You don't have permission to access this resource.", "link": "/", "link_text": "Back to accounts"}
+    if isinstance(exc, RateLimitError):
+        return {"message": "Too many requests. Please try again in a few moments.", "retry": True}
+    if isinstance(exc, NotFoundError):
+        return {"message": "Resource not found.", "link": "/", "link_text": "Back to accounts"}
+    # GoogleAPIError (5xx) or any other
+    return {"message": "Google is temporarily unavailable. Please try again later.", "retry": True}
+
+
 @views_bp.route("/")
 def index():
-    """Landing page with sign-in button, trust statement, and error display."""
+    """Landing page for unauthenticated users, accounts list for authenticated."""
+    from flask import current_app
+
+    cookie = request.cookies.get(TOKEN_COOKIE_NAME)
+    if cookie:
+        data = decrypt_tokens(cookie, current_app.config["FERNET"])
+        if data is not None and data.get("auth_status") == "authenticated":
+            client = get_client()
+            if client is None:
+                return redirect("/login")
+            try:
+                accounts = client.list_accounts()
+            except AuthenticationError:
+                return redirect("/login")
+            except (GooglePermissionError, RateLimitError, NotFoundError, GoogleAPIError) as exc:
+                return render_template("accounts.html", error=_error_context(exc), accounts=[], show_logout=True)
+            return render_template("accounts.html", accounts=accounts, show_logout=True)
+
     return render_template("index.html", error=request.args.get("error"))
 
 
-@views_bp.route("/accounts")
+@views_bp.route("/account/<account_id>")
 @login_required
-def accounts():
-    """Placeholder accounts page behind login_required."""
-    return render_template("accounts.html", show_logout=True)
+def account_detail(account_id):
+    """Show locations for a specific account."""
+    client = get_client()
+    if client is None:
+        return redirect("/login")
+
+    account_name = f"accounts/{account_id}"
+
+    try:
+        accounts = client.list_accounts()
+        account = next((acc for acc in accounts if acc.name == account_name), None)
+        if account is None:
+            account = Account(name=account_name, account_name=account_id)
+
+        locations = client.list_locations(account_name)
+    except AuthenticationError:
+        return redirect("/login")
+    except (GooglePermissionError, RateLimitError, NotFoundError, GoogleAPIError) as exc:
+        account = Account(name=account_name, account_name=account_id)
+        breadcrumbs = [{"label": "Accounts", "url": "/"}, {"label": account.account_name, "url": ""}]
+        return render_template("account.html", error=_error_context(exc), account=account, locations=[], breadcrumbs=breadcrumbs, show_logout=True)
+
+    breadcrumbs = [{"label": "Accounts", "url": "/"}, {"label": account.account_name, "url": ""}]
+    return render_template("account.html", account=account, locations=locations, breadcrumbs=breadcrumbs, show_logout=True)
+
+
+@views_bp.route("/location/<location_id>")
+@login_required
+def location_detail(location_id):
+    """Show details for a specific location."""
+    account_id = request.args.get("account")
+    if not account_id:
+        return redirect("/")
+
+    client = get_client()
+    if client is None:
+        return redirect("/login")
+
+    account_name = f"accounts/{account_id}"
+
+    try:
+        accounts = client.list_accounts()
+        account = next((acc for acc in accounts if acc.name == account_name), None)
+        if account is None:
+            account = Account(name=account_name, account_name=account_id)
+
+        locations = client.list_locations(account_name)
+        location = next((loc for loc in locations if loc.location_id == location_id), None)
+        if location is None:
+            return render_template(
+                "location.html",
+                error={"message": "Resource not found.", "link": "/", "link_text": "Back to accounts"},
+                location=Account(name="", account_name=""),  # dummy for template
+                account=account,
+                breadcrumbs=[{"label": "Accounts", "url": "/"}, {"label": account.account_name, "url": f"/account/{account_id}"}, {"label": "Location", "url": ""}],
+                show_logout=True,
+            )
+    except AuthenticationError:
+        return redirect("/login")
+    except (GooglePermissionError, RateLimitError, NotFoundError, GoogleAPIError) as exc:
+        account = Account(name=account_name, account_name=account_id)
+        breadcrumbs = [{"label": "Accounts", "url": "/"}, {"label": account.account_name, "url": f"/account/{account_id}"}, {"label": "Location", "url": ""}]
+        return render_template("location.html", error=_error_context(exc), location=Account(name="", account_name=""), account=account, breadcrumbs=breadcrumbs, show_logout=True)
+
+    breadcrumbs = [
+        {"label": "Accounts", "url": "/"},
+        {"label": account.account_name, "url": f"/account/{account_id}"},
+        {"label": location.title or "Location", "url": ""},
+    ]
+    return render_template("location.html", location=location, account=account, breadcrumbs=breadcrumbs, show_logout=True)
+
+
+@views_bp.route("/location/<location_id>/reviews")
+@login_required
+def reviews(location_id):
+    """Show paginated reviews for a location."""
+    account_id = request.args.get("account")
+    page_token = request.args.get("page_token")
+    if not account_id:
+        return redirect("/")
+
+    client = get_client()
+    if client is None:
+        return redirect("/login")
+
+    account_name = f"accounts/{account_id}"
+    location_name = f"accounts/{account_id}/locations/{location_id}"
+
+    try:
+        accounts = client.list_accounts()
+        account = next((acc for acc in accounts if acc.name == account_name), None)
+        if account is None:
+            account = Account(name=account_name, account_name=account_id)
+
+        locations = client.list_locations(account_name)
+        location = next((loc for loc in locations if loc.location_id == location_id), None)
+
+        review_list, next_token = get_reviews_page(client, location_name, page_token)
+    except AuthenticationError:
+        return redirect("/login")
+    except (GooglePermissionError, RateLimitError, NotFoundError, GoogleAPIError) as exc:
+        account = Account(name=account_name, account_name=account_id)
+        breadcrumbs = [
+            {"label": "Accounts", "url": "/"},
+            {"label": account.account_name, "url": f"/account/{account_id}"},
+            {"label": "Location", "url": f"/location/{location_id}?account={account_id}"},
+            {"label": "Reviews", "url": ""},
+        ]
+        from google_reviews_client.models import Location
+        location = Location(name="", location_id=location_id, account_id=account_id)
+        return render_template("reviews.html", error=_error_context(exc), reviews=[], location=location, account=account, breadcrumbs=breadcrumbs, next_page_token=None, show_logout=True)
+
+    if location is None:
+        from google_reviews_client.models import Location
+        location = Location(name="", location_id=location_id, account_id=account_id)
+
+    breadcrumbs = [
+        {"label": "Accounts", "url": "/"},
+        {"label": account.account_name, "url": f"/account/{account_id}"},
+        {"label": location.title or "Location", "url": f"/location/{location_id}?account={account_id}"},
+        {"label": "Reviews", "url": ""},
+    ]
+    return render_template("reviews.html", reviews=review_list, location=location, account=account, breadcrumbs=breadcrumbs, next_page_token=next_token, show_logout=True)
