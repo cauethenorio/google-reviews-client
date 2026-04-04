@@ -12,7 +12,7 @@ A four-phase delivery that takes the project from a bare Flask skeleton to a pol
 
 Decimal phases appear between their surrounding integers in numeric order.
 
-- [ ] **Phase 1: Foundation** - Flask app skeleton, Fernet cookie encryption, env var config, stateless infrastructure
+- [x] **Phase 1: Foundation** - Flask app skeleton, Fernet cookie encryption, env var config, stateless infrastructure
 - [ ] **Phase 2: Auth and Landing** - OAuth 2.0 login/callback/logout, encrypted token cookie, landing page with trust statement
 - [ ] **Phase 3: Data Browsing** - Accounts, locations, and reviews pages with pagination, breadcrumbs, and error handling
 - [ ] **Phase 4: Polish** - Star ratings, reviewer photos, review summary, library snippet
@@ -30,8 +30,8 @@ Decimal phases appear between their surrounding integers in numeric order.
   4. No database, no files, no server-side session storage — only cookie and URL state exist in the design
 **Plans**: 2 plans
 Plans:
-- [ ] 01-01-PLAN.md — Project scaffold, app factory, cookie module, blueprints, templates
-- [ ] 01-02-PLAN.md — Test suite for env var validation, cookie encryption, index route
+- [x] 01-01-PLAN.md — Project scaffold, app factory, cookie module, blueprints, templates
+- [x] 01-02-PLAN.md — Test suite for env var validation, cookie encryption, index route
 
 ### Phase 2: Auth and Landing
 **Goal**: Users can sign in with Google, have their tokens stored in an encrypted cookie, and sign out
@@ -79,7 +79,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Foundation | 0/2 | Planning complete | - |
+| 1. Foundation | 2/2 | Complete | 2026-04-04 |
 | 2. Auth and Landing | 0/? | Not started | - |
 | 3. Data Browsing | 0/? | Not started | - |
 | 4. Polish | 0/? | Not started | - |
