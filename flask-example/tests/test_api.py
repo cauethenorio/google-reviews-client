@@ -57,10 +57,12 @@ class TestGetReviewsPage:
 
         from api import get_reviews_page
 
-        reviews, next_token = get_reviews_page(mock_client, "accounts/1/locations/2")
+        reviews, next_token, total_count, avg_rating = get_reviews_page(mock_client, "accounts/1/locations/2")
         assert len(reviews) == 1
         assert reviews[0].review_id == "r1"
         assert next_token == "tok2"
+        assert total_count is None
+        assert avg_rating is None
 
     def test_returns_reviews_without_next_token(self):
         """No nextPageToken returns None for token."""
@@ -71,9 +73,11 @@ class TestGetReviewsPage:
 
         from api import get_reviews_page
 
-        reviews, next_token = get_reviews_page(mock_client, "accounts/1/locations/2")
+        reviews, next_token, total_count, avg_rating = get_reviews_page(mock_client, "accounts/1/locations/2")
         assert len(reviews) == 1
         assert next_token is None
+        assert total_count is None
+        assert avg_rating is None
 
     def test_returns_empty_list_when_no_reviews(self):
         """Empty response returns empty list and None."""
@@ -82,9 +86,11 @@ class TestGetReviewsPage:
 
         from api import get_reviews_page
 
-        reviews, next_token = get_reviews_page(mock_client, "accounts/1/locations/2")
+        reviews, next_token, total_count, avg_rating = get_reviews_page(mock_client, "accounts/1/locations/2")
         assert reviews == []
         assert next_token is None
+        assert total_count is None
+        assert avg_rating is None
 
     def test_passes_page_token_to_api(self):
         """page_token is forwarded as pageToken param."""
@@ -96,3 +102,36 @@ class TestGetReviewsPage:
         get_reviews_page(mock_client, "accounts/1/locations/2", page_token="tok1")
         call_args = mock_client._authenticated_get.call_args
         assert call_args[1]["params"]["pageToken"] == "tok1"
+
+    def test_returns_summary_data_when_present(self):
+        """Returns totalReviewCount and averageRating from API response."""
+        mock_client = MagicMock()
+        mock_client._authenticated_get.return_value = {
+            "reviews": [SAMPLE_REVIEW_API],
+            "nextPageToken": "token123",
+            "totalReviewCount": 42,
+            "averageRating": 4.3,
+        }
+
+        from api import get_reviews_page
+
+        reviews, next_token, total_count, avg_rating = get_reviews_page(mock_client, "accounts/1/locations/2")
+        assert len(reviews) == 1
+        assert next_token == "token123"
+        assert total_count == 42
+        assert avg_rating == 4.3
+
+    def test_returns_none_when_summary_data_missing(self):
+        """Missing totalReviewCount/averageRating return as None."""
+        mock_client = MagicMock()
+        mock_client._authenticated_get.return_value = {
+            "reviews": [SAMPLE_REVIEW_API],
+        }
+
+        from api import get_reviews_page
+
+        reviews, next_token, total_count, avg_rating = get_reviews_page(mock_client, "accounts/1/locations/2")
+        assert len(reviews) == 1
+        assert next_token is None
+        assert total_count is None
+        assert avg_rating is None
