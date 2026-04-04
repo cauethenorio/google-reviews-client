@@ -1,0 +1,10 @@
+{% if error %}
+<div role="alert" class="bg-red-50 border border-red-200 text-red-700 rounded-lg px-4 py-3 mb-6">
+  {{ error.message }}
+  {% if error.retry %}
+  <a href="{{ request.url }}" class="underline font-medium">Try again</a>
+  {% elif error.link %}
+  <a href="{{ error.link }}" class="underline font-medium">{{ error.link_text }}</a>
+  {% endif %}
+</div>
+{% endif %}

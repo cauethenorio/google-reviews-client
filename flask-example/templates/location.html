@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block title %}{{ location.title or "Location" }} - Google Reviews Demo{% endblock %}
+{% block content %}
+{% include "_breadcrumb.html" %}
+{% include "_error.html" %}
+<h1 class="text-2xl font-bold text-gray-900 mb-6">{{ location.title or "Unnamed location" }}</h1>
+{% if location.store_code %}
+<p class="text-sm text-gray-500 mb-6">Store code: {{ location.store_code }}</p>
+{% endif %}
+<a href="/location/{{ location.location_id }}/reviews?account={{ account.name.split('/')[-1] }}" class="inline-block bg-blue-600 text-white rounded-lg px-6 py-3 hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 font-medium">View Reviews</a>
+{% endblock %}

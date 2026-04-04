@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}Reviews for {{ location.title or "Location" }} - Google Reviews Demo{% endblock %}
+{% block content %}
+{% include "_breadcrumb.html" %}
+{% include "_error.html" %}
+<h1 class="text-2xl font-bold text-gray-900 mb-6">Reviews for {{ location.title or "Location" }}</h1>
+{% if reviews %}
+<div class="space-y-4">
+  {% for review in reviews %}
+  <div class="bg-white rounded-lg shadow-sm border border-gray-200 px-4 py-4">
+    <div class="flex items-center justify-between mb-2">
+      <span class="text-sm text-gray-900 font-medium">{{ review.rating_value }} / 5</span>
+      <span class="text-sm text-gray-500">{{ review.create_time.strftime('%b %d, %Y') }}</span>
+    </div>
+    {% if review.comment %}
+    <p class="text-base text-gray-900 mb-2">{{ review.comment[:200] }}{% if review.comment|length > 200 %}...{% endif %}</p>
+    {% endif %}
+    <p class="text-sm text-gray-700">{{ review.reviewer.display_name }}</p>
+    {% if review.has_reply %}
+    <div class="ml-6 mt-3 pl-4 border-l-2 border-gray-200">
+      <p class="text-xs text-gray-500 uppercase mb-1">Owner reply</p>
+      <p class="text-sm text-gray-700">{{ review.review_reply.comment }}</p>
+    </div>
+    {% endif %}
+  </div>
+  {% endfor %}
+</div>
+{% if next_page_token %}
+<div class="mt-6 flex justify-end">
+  <a href="/location/{{ location.location_id }}/reviews?account={{ account.name.split('/')[-1] }}&page_token={{ next_page_token }}" class="text-blue-600 hover:text-blue-700 font-medium text-sm">Next page &rarr;</a>
+</div>
+{% endif %}
+{% else %}
+<div class="text-center py-12">
+  <p class="text-gray-600 text-base">No reviews yet for this location.</p>
+</div>
+{% endif %}
+{% endblock %}

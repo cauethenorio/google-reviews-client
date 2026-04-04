@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}{{ account.account_name }} - Google Reviews Demo{% endblock %}
+{% block content %}
+{% include "_breadcrumb.html" %}
+{% include "_error.html" %}
+<h1 class="text-2xl font-bold text-gray-900 mb-6">{{ account.account_name }}</h1>
+{% if locations %}
+<div class="space-y-3">
+  {% for loc in locations %}
+  <a href="/location/{{ loc.location_id }}?account={{ account.name.split('/')[-1] }}" class="block bg-white rounded-lg shadow-sm border border-gray-200 px-4 py-4 hover:shadow-md transition-shadow">
+    <div class="text-lg font-bold text-gray-900">{{ loc.title or "Unnamed location" }}</div>
+    {% if loc.store_code %}
+    <div class="text-sm text-gray-500">{{ loc.store_code }}</div>
+    {% endif %}
+  </a>
+  {% endfor %}
+</div>
+{% else %}
+<div class="text-center py-12">
+  <p class="text-gray-600 text-base">No locations found for this account.</p>
+</div>
+{% endif %}
+{% endblock %}

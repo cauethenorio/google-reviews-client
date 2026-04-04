@@ -1,10 +1,22 @@
 {% extends "base.html" %}
-
-{% block title %}Accounts - Google Reviews Demo{% endblock %}
-
+{% block title %}Your Accounts - Google Reviews Demo{% endblock %}
 {% block content %}
-<div class="py-12 text-center">
-    <h1 class="text-3xl font-bold text-gray-900 mb-4">Authenticated successfully.</h1>
-    <p class="text-gray-600">Accounts page coming in Phase 3.</p>
+{% include "_error.html" %}
+<h1 class="text-2xl font-bold text-gray-900 mb-6">Your Accounts</h1>
+{% if accounts %}
+<div class="space-y-3">
+  {% for account in accounts %}
+  <a href="/account/{{ account.name.split('/')[-1] }}" class="block bg-white rounded-lg shadow-sm border border-gray-200 px-4 py-4 hover:shadow-md transition-shadow">
+    <div class="text-lg font-bold text-gray-900">{{ account.account_name }}</div>
+    {% if account.type %}
+    <div class="text-sm text-gray-500">{{ account.type }}</div>
+    {% endif %}
+  </a>
+  {% endfor %}
 </div>
+{% else %}
+<div class="text-center py-12">
+  <p class="text-gray-600 text-base">No accounts found. Make sure your Google account has access to a Business Profile.</p>
+</div>
+{% endif %}
 {% endblock %}
