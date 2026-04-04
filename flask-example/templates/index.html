@@ -1,11 +1,29 @@
 {% extends "base.html" %}
 
-{% block title %}Home - Google Reviews Demo{% endblock %}
+{% block title %}Google Reviews Demo{% endblock %}
 
 {% block content %}
+{% if error %}
+<div role="alert" class="bg-red-50 border border-red-200 text-red-700 rounded-lg px-4 py-3 mb-6">
+    {% if error == "session_expired" %}
+    Your session has expired. Please sign in again.
+    {% elif error in ["missing_state", "invalid_state", "state_mismatch"] %}
+    Something went wrong during sign-in. Please try again.
+    {% elif error == "access_denied" %}
+    Sign-in was cancelled. You can try again whenever you are ready.
+    {% else %}
+    An unexpected error occurred. Please try again.
+    {% endif %}
+</div>
+{% endif %}
 <div class="text-center py-12">
     <h1 class="text-3xl font-bold text-gray-900 mb-4">Google Reviews Demo</h1>
-    <p class="text-gray-600 mb-2">The app is running successfully.</p>
-    <p class="text-sm text-gray-400">Built with Flask and google-reviews-client</p>
+    <p class="text-gray-600 mb-6">Your data stays in your browser. Nothing is stored on our servers.</p>
+    <ul class="text-gray-600 mb-8 space-y-2">
+        <li>Browse your Google Business Profile accounts</li>
+        <li>View locations for each account</li>
+        <li>Read and explore reviews</li>
+    </ul>
+    <a href="/login" class="inline-block bg-blue-600 text-white rounded-lg px-6 py-3 hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">Sign in with Google</a>
 </div>
 {% endblock %}
