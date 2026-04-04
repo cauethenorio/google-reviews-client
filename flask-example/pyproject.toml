@@ -1,0 +1,22 @@
+[project]
+name = "google-reviews-flask-demo"
+version = "0.1.0"
+description = "Flask demo app for google-reviews-client"
+requires-python = ">=3.10"
+dependencies = [
+    "flask>=3.1",
+    "python-dotenv>=1.0",
+    "cryptography>=44",
+    "google-reviews-client",
+    "google-auth-oauthlib>=1.3",
+    "gunicorn>=21",
+]
+
+[dependency-groups]
+dev = ["pytest>=7.2"]
+
+[tool.setuptools]
+py-modules = ["app", "auth", "cookies", "views"]
+
+[tool.uv.sources]
+google-reviews-client = { path = "..", editable = true }
