@@ -5,7 +5,8 @@ from unittest.mock import MagicMock
 
 import pytest
 from app import create_app
-from cookies import encrypt_tokens, TOKEN_COOKIE_NAME  # noqa: F401
+from cookies import TOKEN_COOKIE_NAME, encrypt_tokens  # noqa: F401
+
 from google_reviews_client.models import (
     Account,
     Location,
@@ -110,6 +111,44 @@ def sample_reviews():
             comment="It was okay. " * 20,
             create_time=datetime(2025, 2, 10, 10, 0),
             update_time=datetime(2025, 2, 10, 10, 0),
+            review_reply=None,
+        ),
+    ]
+
+
+@pytest.fixture()
+def polish_reviews():
+    """Reviews covering polish features: photo, anonymous, unspecified rating."""
+    return [
+        Review(
+            review_id="p1",
+            reviewer=Reviewer(
+                display_name="Carol",
+                profile_photo_url="https://lh3.googleusercontent.com/photo123",
+                is_anonymous=False,
+            ),
+            star_rating=StarRating.FOUR,
+            comment="Nice place!",
+            create_time=datetime(2025, 4, 1, 10, 0),
+            update_time=datetime(2025, 4, 1, 10, 0),
+            review_reply=None,
+        ),
+        Review(
+            review_id="p2",
+            reviewer=Reviewer(display_name="Anonymous", profile_photo_url=None, is_anonymous=True),
+            star_rating=StarRating.TWO,
+            comment="Not great.",
+            create_time=datetime(2025, 4, 2, 10, 0),
+            update_time=datetime(2025, 4, 2, 10, 0),
+            review_reply=None,
+        ),
+        Review(
+            review_id="p3",
+            reviewer=Reviewer(display_name="Dave", profile_photo_url=None, is_anonymous=False),
+            star_rating=StarRating.STAR_RATING_UNSPECIFIED,
+            comment="Left without rating.",
+            create_time=datetime(2025, 4, 3, 10, 0),
+            update_time=datetime(2025, 4, 3, 10, 0),
             review_reply=None,
         ),
     ]
