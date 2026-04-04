@@ -13,7 +13,7 @@ A four-phase delivery that takes the project from a bare Flask skeleton to a pol
 Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Foundation** - Flask app skeleton, Fernet cookie encryption, env var config, stateless infrastructure
-- [ ] **Phase 2: Auth and Landing** - OAuth 2.0 login/callback/logout, encrypted token cookie, landing page with trust statement
+- [x] **Phase 2: Auth and Landing** - OAuth 2.0 login/callback/logout, encrypted token cookie, landing page with trust statement
 - [ ] **Phase 3: Data Browsing** - Accounts, locations, and reviews pages with pagination, breadcrumbs, and error handling
 - [ ] **Phase 4: Polish** - Star ratings, reviewer photos, review summary, library snippet
 
@@ -46,7 +46,7 @@ Plans:
 **Plans**: 2 plans
 Plans:
 - [x] 02-01-PLAN.md — OAuth routes (login/callback/logout), login_required decorator, landing page, placeholder accounts
-- [ ] 02-02-PLAN.md — Test suite for auth flow, landing page content, login_required protection
+- [x] 02-02-PLAN.md — Test suite for auth flow, landing page content, login_required protection
 
 ### Phase 3: Data Browsing
 **Goal**: Authenticated users can navigate the full accounts → locations → reviews hierarchy and see meaningful errors
@@ -82,6 +82,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Foundation | 2/2 | Complete | 2026-04-04 |
-| 2. Auth and Landing | 1/2 | In progress | - |
+| 2. Auth and Landing | 2/2 | Complete | 2026-04-04 |
 | 3. Data Browsing | 0/? | Not started | - |
 | 4. Polish | 0/? | Not started | - |

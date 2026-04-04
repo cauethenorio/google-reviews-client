@@ -10,28 +10,28 @@ See: .planning/PROJECT.md (updated 2026-04-03)
 ## Current Position
 
 Phase: 2 of 4 (Auth and Landing)
-Plan: 1 of 2 in current phase
-Status: Plan 02-01 complete
-Last activity: 2026-04-04 — Plan 02-01 completed (OAuth routes and landing page)
+Plan: 2 of 2 in current phase
+Status: Phase 2 complete
+Last activity: 2026-04-04 — Plan 02-02 completed (auth and landing test suite)
 
-Progress: [███░░░░░░░] 37%
+Progress: [█████░░░░░] 50%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 3
-- Average duration: ~6 min
-- Total execution time: ~18 min
+- Total plans completed: 4
+- Average duration: ~5 min
+- Total execution time: ~20 min
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 1 | 2 | ~16 min | ~8 min |
-| 2 | 1 | ~2 min | ~2 min |
+| 2 | 2 | ~4 min | ~2 min |
 
 **Recent Trend:**
-- Last 5 plans: 01-01 (171s), 01-02 (806s), 02-01 (109s)
+- Last 5 plans: 01-01 (171s), 01-02 (806s), 02-01 (109s), 02-02 (85s)
 - Trend: improving
 
 *Updated after each plan completion*
@@ -49,6 +49,8 @@ Recent decisions affecting current work:
 - 02-01: PKCE code_verifier stored in Fernet-encrypted pending cookie with 5 min TTL
 - 02-01: Error messages mapped in Jinja2 template with role=alert for accessibility
 - 02-01: REDIRECT_URI env var optional, defaults to url_for for local dev
+- 02-02: Mock auth.Flow (not full module path) since auth.py imports directly
+- 02-02: Parse Set-Cookie header to extract encrypted cookie for test verification
 
 ### Pending Todos
 
@@ -63,5 +65,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-04-04
-Stopped at: Completed 02-01-PLAN.md — OAuth routes and landing page
-Resume file: .planning/flask-demo/phases/02-auth-and-landing/02-01-SUMMARY.md
+Stopped at: Completed 02-02-PLAN.md — Auth and landing test suite
+Resume file: .planning/flask-demo/phases/02-auth-and-landing/02-02-SUMMARY.md
