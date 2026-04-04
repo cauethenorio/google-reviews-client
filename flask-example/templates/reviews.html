@@ -4,24 +4,55 @@
 {% include "_breadcrumb.html" %}
 {% include "_error.html" %}
 <h1 class="text-2xl font-bold text-gray-900 mb-6">Reviews for {{ location.title or "Location" }}</h1>
+{% if total_review_count is not none %}
+<div class="bg-white rounded-lg shadow-sm border border-gray-200 px-4 py-4 mb-6 flex items-center gap-6">
+  <div>
+    <span class="text-xl font-bold text-gray-900">{{ average_rating }}</span>
+    <span class="text-amber-500 text-xl tracking-wide ml-1">{{ "\u2605" * avg_rounded }}{{ "\u2606" * (5 - avg_rounded) }}</span>
+  </div>
+  <div class="text-sm text-gray-500">
+    {{ total_review_count }} review{{ "s" if total_review_count != 1 }}
+  </div>
+</div>
+{% endif %}
 {% if reviews %}
 <div class="space-y-4">
   {% for review in reviews %}
   <div class="bg-white rounded-lg shadow-sm border border-gray-200 px-4 py-4">
-    <div class="flex items-center justify-between mb-2">
-      <span class="text-sm text-gray-900 font-medium">{{ review.rating_value }} / 5</span>
-      <span class="text-sm text-gray-500">{{ review.create_time.strftime('%b %d, %Y') }}</span>
+    <div class="flex gap-4">
+      {# Reviewer photo #}
+      {% if not review.reviewer.is_anonymous and review.reviewer.profile_photo_url %}
+      <img src="{{ review.reviewer.profile_photo_url }}" alt="" class="w-10 h-10 rounded-full object-cover flex-shrink-0" loading="lazy" referrerpolicy="no-referrer" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+      <div class="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0" aria-hidden="true" style="display:none">
+        <span class="text-gray-500 text-sm font-medium">{{ (review.reviewer.display_name[0] | upper) if review.reviewer.display_name else "A" }}</span>
+      </div>
+      {% else %}
+      <div class="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0" aria-hidden="true">
+        <span class="text-gray-500 text-sm font-medium">{{ (review.reviewer.display_name[0] | upper) if review.reviewer.display_name else "A" }}</span>
+      </div>
+      {% endif %}
+      {# Review content #}
+      <div class="flex-1 min-w-0">
+        <div class="flex items-center justify-between mb-2">
+          {% if review.rating_value == 0 %}
+          <span class="text-gray-500 text-sm">No rating</span>
+          {% else %}
+          <span class="text-amber-500 tracking-wide" aria-label="{{ review.rating_value }} out of 5 stars">{{ "\u2605" * review.rating_value }}{{ "\u2606" * (5 - review.rating_value) }}</span>
+          {% endif %}
+          <span class="text-sm text-gray-500">{{ review.create_time.strftime('%b %d, %Y') }}</span>
+        </div>
+        {% if review.comment %}
+        <p class="text-base text-gray-900 mb-2">{{ review.comment[:200] }}{% if review.comment|length > 200 %}...{% endif %}</p>
+        {% endif %}
+        <p class="text-sm text-gray-700">{{ review.reviewer.display_name }}</p>
+        {% if review.has_reply %}
+        <div class="ml-6 mt-3 pl-4 border-l-2 border-gray-200">
+          <p class="text-xs text-gray-500 uppercase mb-1">Owner reply</p>
+          <p class="text-sm text-gray-700">{{ review.review_reply.comment }}</p>
+        </div>
+        {% endif %}
+      </div>
     </div>
-    {% if review.comment %}
-    <p class="text-base text-gray-900 mb-2">{{ review.comment[:200] }}{% if review.comment|length > 200 %}...{% endif %}</p>
-    {% endif %}
-    <p class="text-sm text-gray-700">{{ review.reviewer.display_name }}</p>
-    {% if review.has_reply %}
-    <div class="ml-6 mt-3 pl-4 border-l-2 border-gray-200">
-      <p class="text-xs text-gray-500 uppercase mb-1">Owner reply</p>
-      <p class="text-sm text-gray-700">{{ review.review_reply.comment }}</p>
-    </div>
-    {% endif %}
   </div>
   {% endfor %}
 </div>
@@ -33,6 +64,22 @@
 {% else %}
 <div class="text-center py-12">
   <p class="text-gray-600 text-base">No reviews yet for this location.</p>
+</div>
+{% endif %}
+{% if reviews %}
+<div class="mt-8 pt-8 border-t border-gray-200">
+  <h2 class="text-lg font-bold text-gray-900 mb-2">Get this data programmatically</h2>
+  <p class="text-sm text-gray-600 mb-4">Use the google-reviews-client library to access these reviews in your own code:</p>
+  <div class="relative">
+    <button onclick="navigator.clipboard.writeText(document.getElementById('code-snippet').textContent).then(()=>{this.textContent='Copied!';setTimeout(()=>this.textContent='Copy',2000)})" class="absolute top-2 right-2 bg-white border border-gray-300 rounded px-2 py-1 text-xs text-gray-600 hover:bg-gray-50">Copy</button>
+    <pre class="bg-gray-50 rounded-lg p-4 font-mono text-sm overflow-x-auto"><code id="code-snippet">pip install google-reviews-client
+
+from google_reviews_client import GoogleReviewsClient
+
+client = GoogleReviewsClient(credentials)
+for review in client.list_reviews("{{ location.name }}"):
+    print(review.reviewer.display_name, review.star_rating, review.comment)</code></pre>
+  </div>
 </div>
 {% endif %}
 {% endblock %}
