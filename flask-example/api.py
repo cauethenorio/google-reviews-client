@@ -2,10 +2,10 @@
 
 from datetime import datetime
 
+from cookies import TOKEN_COOKIE_NAME, decrypt_tokens
 from flask import current_app, request
 from google.oauth2.credentials import Credentials
 
-from cookies import TOKEN_COOKIE_NAME, decrypt_tokens
 from google_reviews_client.client import GoogleReviewsClient
 from google_reviews_client.constants import BUSINESS_BASE
 from google_reviews_client.models import Review
@@ -37,4 +37,4 @@ def get_reviews_page(client, location_name, page_token=None):
         params["pageToken"] = page_token
     data = client._authenticated_get(url, params=params)
     reviews = [Review.from_api_response(r) for r in data.get("reviews", [])]
-    return reviews, data.get("nextPageToken")
+    return reviews, data.get("nextPageToken"), data.get("totalReviewCount"), data.get("averageRating")

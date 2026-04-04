@@ -1,10 +1,10 @@
 """Views blueprint with data browsing routes and error handling."""
 
-from flask import Blueprint, redirect, render_template, request
-
 from api import get_client, get_reviews_page
 from auth import login_required
 from cookies import TOKEN_COOKIE_NAME, decrypt_tokens
+from flask import Blueprint, redirect, render_template, request
+
 from google_reviews_client.exceptions import (
     AuthenticationError,
     GoogleAPIError,
@@ -20,7 +20,11 @@ views_bp = Blueprint("views", __name__)
 def _error_context(exc, back_url="/", back_text="Back to accounts"):
     """Map library exception to error dict for template rendering."""
     if isinstance(exc, GooglePermissionError):
-        return {"message": "You don't have permission to access this resource.", "link": "/", "link_text": "Back to accounts"}
+        return {
+            "message": "You don't have permission to access this resource.",
+            "link": "/",
+            "link_text": "Back to accounts",
+        }
     if isinstance(exc, RateLimitError):
         return {"message": "Too many requests. Please try again in a few moments.", "retry": True}
     if isinstance(exc, NotFoundError):
@@ -74,10 +78,19 @@ def account_detail(account_id):
     except (GooglePermissionError, RateLimitError, NotFoundError, GoogleAPIError) as exc:
         account = Account(name=account_name, account_name=account_id)
         breadcrumbs = [{"label": "Accounts", "url": "/"}, {"label": account.account_name, "url": ""}]
-        return render_template("account.html", error=_error_context(exc), account=account, locations=[], breadcrumbs=breadcrumbs, show_logout=True)
+        return render_template(
+            "account.html",
+            error=_error_context(exc),
+            account=account,
+            locations=[],
+            breadcrumbs=breadcrumbs,
+            show_logout=True,
+        )
 
     breadcrumbs = [{"label": "Accounts", "url": "/"}, {"label": account.account_name, "url": ""}]
-    return render_template("account.html", account=account, locations=locations, breadcrumbs=breadcrumbs, show_logout=True)
+    return render_template(
+        "account.html", account=account, locations=locations, breadcrumbs=breadcrumbs, show_logout=True
+    )
 
 
 @views_bp.route("/location/<location_id>")
@@ -108,22 +121,39 @@ def location_detail(location_id):
                 error={"message": "Resource not found.", "link": "/", "link_text": "Back to accounts"},
                 location=Account(name="", account_name=""),  # dummy for template
                 account=account,
-                breadcrumbs=[{"label": "Accounts", "url": "/"}, {"label": account.account_name, "url": f"/account/{account_id}"}, {"label": "Location", "url": ""}],
+                breadcrumbs=[
+                    {"label": "Accounts", "url": "/"},
+                    {"label": account.account_name, "url": f"/account/{account_id}"},
+                    {"label": "Location", "url": ""},
+                ],
                 show_logout=True,
             )
     except AuthenticationError:
         return redirect("/login")
     except (GooglePermissionError, RateLimitError, NotFoundError, GoogleAPIError) as exc:
         account = Account(name=account_name, account_name=account_id)
-        breadcrumbs = [{"label": "Accounts", "url": "/"}, {"label": account.account_name, "url": f"/account/{account_id}"}, {"label": "Location", "url": ""}]
-        return render_template("location.html", error=_error_context(exc), location=Account(name="", account_name=""), account=account, breadcrumbs=breadcrumbs, show_logout=True)
+        breadcrumbs = [
+            {"label": "Accounts", "url": "/"},
+            {"label": account.account_name, "url": f"/account/{account_id}"},
+            {"label": "Location", "url": ""},
+        ]
+        return render_template(
+            "location.html",
+            error=_error_context(exc),
+            location=Account(name="", account_name=""),
+            account=account,
+            breadcrumbs=breadcrumbs,
+            show_logout=True,
+        )
 
     breadcrumbs = [
         {"label": "Accounts", "url": "/"},
         {"label": account.account_name, "url": f"/account/{account_id}"},
         {"label": location.title or "Location", "url": ""},
     ]
-    return render_template("location.html", location=location, account=account, breadcrumbs=breadcrumbs, show_logout=True)
+    return render_template(
+        "location.html", location=location, account=account, breadcrumbs=breadcrumbs, show_logout=True
+    )
 
 
 @views_bp.route("/location/<location_id>/reviews")
@@ -151,7 +181,9 @@ def reviews(location_id):
         locations = client.list_locations(account_name)
         location = next((loc for loc in locations if loc.location_id == location_id), None)
 
-        review_list, next_token = get_reviews_page(client, location_name, page_token)
+        review_list, next_token, total_review_count, average_rating = get_reviews_page(
+            client, location_name, page_token
+        )
     except AuthenticationError:
         return redirect("/login")
     except (GooglePermissionError, RateLimitError, NotFoundError, GoogleAPIError) as exc:
@@ -163,11 +195,25 @@ def reviews(location_id):
             {"label": "Reviews", "url": ""},
         ]
         from google_reviews_client.models import Location
+
         location = Location(name="", location_id=location_id, account_id=account_id)
-        return render_template("reviews.html", error=_error_context(exc), reviews=[], location=location, account=account, breadcrumbs=breadcrumbs, next_page_token=None, show_logout=True)
+        return render_template(
+            "reviews.html",
+            error=_error_context(exc),
+            reviews=[],
+            location=location,
+            account=account,
+            breadcrumbs=breadcrumbs,
+            next_page_token=None,
+            total_review_count=None,
+            average_rating=None,
+            avg_rounded=0,
+            show_logout=True,
+        )
 
     if location is None:
         from google_reviews_client.models import Location
+
         location = Location(name="", location_id=location_id, account_id=account_id)
 
     breadcrumbs = [
@@ -176,4 +222,16 @@ def reviews(location_id):
         {"label": location.title or "Location", "url": f"/location/{location_id}?account={account_id}"},
         {"label": "Reviews", "url": ""},
     ]
-    return render_template("reviews.html", reviews=review_list, location=location, account=account, breadcrumbs=breadcrumbs, next_page_token=next_token, show_logout=True)
+    avg_rounded = round(average_rating) if average_rating else 0
+    return render_template(
+        "reviews.html",
+        reviews=review_list,
+        location=location,
+        account=account,
+        breadcrumbs=breadcrumbs,
+        next_page_token=next_token,
+        total_review_count=total_review_count,
+        average_rating=average_rating,
+        avg_rounded=avg_rounded,
+        show_logout=True,
+    )
