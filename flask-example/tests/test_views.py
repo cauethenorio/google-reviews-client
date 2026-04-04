@@ -1,6 +1,15 @@
-"""Tests for views blueprint: landing page and accounts page (UX-01, UX-02)."""
+"""Tests for views blueprint: landing page, accounts, locations, reviews."""
+
+from unittest import mock
 
 from cookies import TOKEN_COOKIE_NAME
+from google_reviews_client.exceptions import (
+    AuthenticationError,
+    GoogleAPIError,
+    GooglePermissionError,
+    NotFoundError,
+    RateLimitError,
+)
 
 
 class TestLandingPage:
@@ -70,24 +79,372 @@ class TestLandingPage:
         assert b"Log out" not in response.data
 
 
-class TestAccountsPage:
-    """Test the accounts page behind login_required."""
+class TestAccountsList:
+    """Test the authenticated accounts list on GET / (DATA-01, DATA-05)."""
 
-    def test_accounts_page_requires_auth(self, client):
-        """GET /accounts without cookie redirects (302)."""
-        response = client.get("/accounts")
+    @mock.patch("views.get_client")
+    def test_authenticated_index_shows_accounts(
+        self, mock_get_client, client, authenticated_cookie, mock_client
+    ):
+        """Authenticated GET / shows account names."""
+        mock_get_client.return_value = mock_client
+        client.set_cookie(TOKEN_COOKIE_NAME, authenticated_cookie)
+        response = client.get("/")
+        assert response.status_code == 200
+        assert b"Test Business" in response.data
+        assert b"PERSONAL" in response.data
+
+    @mock.patch("views.get_client")
+    def test_authenticated_index_shows_account_links(
+        self, mock_get_client, client, authenticated_cookie, mock_client
+    ):
+        """Authenticated GET / contains links to account detail."""
+        mock_get_client.return_value = mock_client
+        client.set_cookie(TOKEN_COOKIE_NAME, authenticated_cookie)
+        response = client.get("/")
+        assert b"/account/111" in response.data
+
+    @mock.patch("views.get_client")
+    def test_authenticated_index_empty_accounts(
+        self, mock_get_client, client, authenticated_cookie, mock_client
+    ):
+        """Empty accounts list shows message."""
+        mock_client.list_accounts.return_value = []
+        mock_get_client.return_value = mock_client
+        client.set_cookie(TOKEN_COOKIE_NAME, authenticated_cookie)
+        response = client.get("/")
+        assert b"No accounts found" in response.data
+
+    @mock.patch("views.get_client")
+    def test_authenticated_index_shows_logout(
+        self, mock_get_client, client, authenticated_cookie, mock_client
+    ):
+        """Authenticated GET / shows Log out link."""
+        mock_get_client.return_value = mock_client
+        client.set_cookie(TOKEN_COOKIE_NAME, authenticated_cookie)
+        response = client.get("/")
+        assert b"Log out" in response.data
+
+    def test_unauthenticated_index_shows_landing(self, client):
+        """GET / without cookie shows landing page."""
+        response = client.get("/")
+        assert b"Sign in with Google" in response.data
+
+
+class TestAccountDetail:
+    """Test the account detail page (DATA-02, DATA-05, UX-05)."""
+
+    @mock.patch("views.get_client")
+    def test_account_shows_locations(
+        self, mock_get_client, client, authenticated_cookie, mock_client
+    ):
+        """GET /account/111 lists locations with titles and store codes."""
+        mock_get_client.return_value = mock_client
+        client.set_cookie(TOKEN_COOKIE_NAME, authenticated_cookie)
+        response = client.get("/account/111")
+        assert response.status_code == 200
+        assert b"Main Store" in response.data
+        assert b"MAIN" in response.data
+
+    @mock.patch("views.get_client")
+    def test_account_shows_location_links(
+        self, mock_get_client, client, authenticated_cookie, mock_client
+    ):
+        """Location links include account ID."""
+        mock_get_client.return_value = mock_client
+        client.set_cookie(TOKEN_COOKIE_NAME, authenticated_cookie)
+        response = client.get("/account/111")
+        assert b"/location/aaa?account=111" in response.data
+
+    @mock.patch("views.get_client")
+    def test_account_empty_locations(
+        self, mock_get_client, client, authenticated_cookie, mock_client
+    ):
+        """Empty locations list shows message."""
+        mock_client.list_locations.return_value = []
+        mock_get_client.return_value = mock_client
+        client.set_cookie(TOKEN_COOKIE_NAME, authenticated_cookie)
+        response = client.get("/account/111")
+        assert b"No locations found for this account" in response.data
+
+    @mock.patch("views.get_client")
+    def test_account_has_breadcrumb(
+        self, mock_get_client, client, authenticated_cookie, mock_client
+    ):
+        """Account page has breadcrumb navigation."""
+        mock_get_client.return_value = mock_client
+        client.set_cookie(TOKEN_COOKIE_NAME, authenticated_cookie)
+        response = client.get("/account/111")
+        assert b"Accounts" in response.data
+        assert b'aria-label="Breadcrumb"' in response.data
+
+    def test_account_requires_auth(self, client):
+        """GET /account/111 without cookie redirects."""
+        response = client.get("/account/111")
         assert response.status_code == 302
 
-    def test_accounts_page_shows_placeholder(self, client, authenticated_cookie):
-        """GET /accounts with auth cookie shows Phase 3 placeholder."""
-        client.set_cookie(TOKEN_COOKIE_NAME, authenticated_cookie)
-        response = client.get("/accounts")
-        assert response.status_code == 200
-        assert b"Accounts page coming in Phase 3" in response.data
 
-    def test_accounts_page_shows_logout_link(self, client, authenticated_cookie):
-        """GET /accounts with auth cookie shows Log out link."""
+class TestLocationDetail:
+    """Test the location detail page (UX-05)."""
+
+    @mock.patch("views.get_client")
+    def test_location_shows_details(
+        self, mock_get_client, client, authenticated_cookie, mock_client
+    ):
+        """GET /location/aaa?account=111 shows location details."""
+        mock_get_client.return_value = mock_client
         client.set_cookie(TOKEN_COOKIE_NAME, authenticated_cookie)
-        response = client.get("/accounts")
+        response = client.get("/location/aaa?account=111")
         assert response.status_code == 200
-        assert b"Log out" in response.data
+        assert b"Main Store" in response.data
+
+    @mock.patch("views.get_client")
+    def test_location_has_view_reviews_button(
+        self, mock_get_client, client, authenticated_cookie, mock_client
+    ):
+        """Location page has View Reviews link."""
+        mock_get_client.return_value = mock_client
+        client.set_cookie(TOKEN_COOKIE_NAME, authenticated_cookie)
+        response = client.get("/location/aaa?account=111")
+        assert b"View Reviews" in response.data
+        assert b"/location/aaa/reviews?account=111" in response.data
+
+    @mock.patch("views.get_client")
+    def test_location_has_breadcrumb(
+        self, mock_get_client, client, authenticated_cookie, mock_client
+    ):
+        """Location page has breadcrumb navigation."""
+        mock_get_client.return_value = mock_client
+        client.set_cookie(TOKEN_COOKIE_NAME, authenticated_cookie)
+        response = client.get("/location/aaa?account=111")
+        assert b'aria-label="Breadcrumb"' in response.data
+
+    def test_location_without_account_param_redirects(self, client, authenticated_cookie):
+        """GET /location/aaa without ?account= redirects to /."""
+        client.set_cookie(TOKEN_COOKIE_NAME, authenticated_cookie)
+        response = client.get("/location/aaa")
+        assert response.status_code == 302
+
+    def test_location_requires_auth(self, client):
+        """GET /location/aaa?account=111 without cookie redirects."""
+        response = client.get("/location/aaa?account=111")
+        assert response.status_code == 302
+
+
+class TestReviewsList:
+    """Test the reviews list page (DATA-03, DATA-05, UX-05)."""
+
+    @mock.patch("views.get_reviews_page")
+    @mock.patch("views.get_client")
+    def test_reviews_shows_review_content(
+        self, mock_get_client, mock_get_page, client, authenticated_cookie, mock_client, sample_reviews
+    ):
+        """Reviews page shows reviewer name, comment, and rating."""
+        mock_get_client.return_value = mock_client
+        mock_get_page.return_value = (sample_reviews, None)
+        client.set_cookie(TOKEN_COOKIE_NAME, authenticated_cookie)
+        response = client.get("/location/aaa/reviews?account=111")
+        assert response.status_code == 200
+        assert b"Alice" in response.data
+        assert b"Great place!" in response.data
+        assert b"5 / 5" in response.data
+
+    @mock.patch("views.get_reviews_page")
+    @mock.patch("views.get_client")
+    def test_reviews_shows_date_formatted(
+        self, mock_get_client, mock_get_page, client, authenticated_cookie, mock_client, sample_reviews
+    ):
+        """Reviews page formats dates."""
+        mock_get_client.return_value = mock_client
+        mock_get_page.return_value = (sample_reviews, None)
+        client.set_cookie(TOKEN_COOKIE_NAME, authenticated_cookie)
+        response = client.get("/location/aaa/reviews?account=111")
+        assert b"Mar 15, 2025" in response.data
+
+    @mock.patch("views.get_reviews_page")
+    @mock.patch("views.get_client")
+    def test_reviews_shows_reply(
+        self, mock_get_client, mock_get_page, client, authenticated_cookie, mock_client, sample_reviews
+    ):
+        """Reviews page shows owner replies."""
+        mock_get_client.return_value = mock_client
+        mock_get_page.return_value = (sample_reviews, None)
+        client.set_cookie(TOKEN_COOKIE_NAME, authenticated_cookie)
+        response = client.get("/location/aaa/reviews?account=111")
+        assert b"Owner reply" in response.data
+        assert b"Thank you!" in response.data
+
+    @mock.patch("views.get_reviews_page")
+    @mock.patch("views.get_client")
+    def test_reviews_empty(
+        self, mock_get_client, mock_get_page, client, authenticated_cookie, mock_client
+    ):
+        """Empty reviews shows message."""
+        mock_get_client.return_value = mock_client
+        mock_get_page.return_value = ([], None)
+        client.set_cookie(TOKEN_COOKIE_NAME, authenticated_cookie)
+        response = client.get("/location/aaa/reviews?account=111")
+        assert b"No reviews yet for this location" in response.data
+
+    @mock.patch("views.get_reviews_page")
+    @mock.patch("views.get_client")
+    def test_reviews_has_breadcrumb(
+        self, mock_get_client, mock_get_page, client, authenticated_cookie, mock_client, sample_reviews
+    ):
+        """Reviews page has breadcrumb navigation."""
+        mock_get_client.return_value = mock_client
+        mock_get_page.return_value = (sample_reviews, None)
+        client.set_cookie(TOKEN_COOKIE_NAME, authenticated_cookie)
+        response = client.get("/location/aaa/reviews?account=111")
+        assert b'aria-label="Breadcrumb"' in response.data
+
+    def test_reviews_requires_auth(self, client):
+        """GET /location/aaa/reviews?account=111 without cookie redirects."""
+        response = client.get("/location/aaa/reviews?account=111")
+        assert response.status_code == 302
+
+    def test_reviews_without_account_param_redirects(self, client, authenticated_cookie):
+        """GET /location/aaa/reviews without ?account= redirects to /."""
+        client.set_cookie(TOKEN_COOKIE_NAME, authenticated_cookie)
+        response = client.get("/location/aaa/reviews")
+        assert response.status_code == 302
+
+
+class TestReviewsPagination:
+    """Test review pagination (DATA-04)."""
+
+    @mock.patch("views.get_reviews_page")
+    @mock.patch("views.get_client")
+    def test_next_page_link_shown(
+        self, mock_get_client, mock_get_page, client, authenticated_cookie, mock_client, sample_reviews
+    ):
+        """Next page link appears when there is a next token."""
+        mock_get_client.return_value = mock_client
+        mock_get_page.return_value = (sample_reviews, "next-tok")
+        client.set_cookie(TOKEN_COOKIE_NAME, authenticated_cookie)
+        response = client.get("/location/aaa/reviews?account=111")
+        assert b"Next page" in response.data
+        assert b"page_token=next-tok" in response.data
+
+    @mock.patch("views.get_reviews_page")
+    @mock.patch("views.get_client")
+    def test_no_next_page_when_no_token(
+        self, mock_get_client, mock_get_page, client, authenticated_cookie, mock_client, sample_reviews
+    ):
+        """No next page link when token is None."""
+        mock_get_client.return_value = mock_client
+        mock_get_page.return_value = (sample_reviews, None)
+        client.set_cookie(TOKEN_COOKIE_NAME, authenticated_cookie)
+        response = client.get("/location/aaa/reviews?account=111")
+        assert b"Next page" not in response.data
+
+    @mock.patch("views.get_reviews_page")
+    @mock.patch("views.get_client")
+    def test_page_token_passed_to_api(
+        self, mock_get_client, mock_get_page, client, authenticated_cookie, mock_client, sample_reviews
+    ):
+        """page_token query param is forwarded to get_reviews_page."""
+        mock_get_client.return_value = mock_client
+        mock_get_page.return_value = (sample_reviews, None)
+        client.set_cookie(TOKEN_COOKIE_NAME, authenticated_cookie)
+        client.get("/location/aaa/reviews?account=111&page_token=tok1")
+        mock_get_page.assert_called_once()
+        call_args = mock_get_page.call_args
+        assert call_args[0][2] == "tok1" or call_args[1].get("page_token") == "tok1"
+
+
+class TestAPIErrors:
+    """Test error handling for API exceptions (DATA-06)."""
+
+    @mock.patch("views.get_client")
+    def test_auth_error_redirects_to_login(
+        self, mock_get_client, client, authenticated_cookie
+    ):
+        """AuthenticationError redirects to /login."""
+        mock_get_client.return_value = mock.MagicMock(
+            list_accounts=mock.MagicMock(side_effect=AuthenticationError("expired"))
+        )
+        client.set_cookie(TOKEN_COOKIE_NAME, authenticated_cookie)
+        response = client.get("/")
+        assert response.status_code == 302
+        assert "/login" in response.location
+
+    @mock.patch("views.get_client")
+    def test_permission_error_shows_banner(
+        self, mock_get_client, client, authenticated_cookie
+    ):
+        """GooglePermissionError shows permission error banner."""
+        mock_get_client.return_value = mock.MagicMock(
+            list_accounts=mock.MagicMock(side_effect=GooglePermissionError("forbidden"))
+        )
+        client.set_cookie(TOKEN_COOKIE_NAME, authenticated_cookie)
+        response = client.get("/")
+        assert response.status_code == 200
+        assert b"permission" in response.data.lower()
+        assert b'role="alert"' in response.data
+
+    @mock.patch("views.get_client")
+    def test_rate_limit_error_shows_banner(
+        self, mock_get_client, client, authenticated_cookie
+    ):
+        """RateLimitError shows rate limit error banner."""
+        mock_get_client.return_value = mock.MagicMock(
+            list_accounts=mock.MagicMock(side_effect=RateLimitError("slow down"))
+        )
+        client.set_cookie(TOKEN_COOKIE_NAME, authenticated_cookie)
+        response = client.get("/")
+        assert response.status_code == 200
+        assert b"Too many requests" in response.data
+
+    @mock.patch("views.get_client")
+    def test_not_found_error_shows_banner(
+        self, mock_get_client, client, authenticated_cookie, mock_client
+    ):
+        """NotFoundError on account detail shows not found banner."""
+        mock_client.list_accounts.side_effect = NotFoundError("gone")
+        mock_get_client.return_value = mock_client
+        client.set_cookie(TOKEN_COOKIE_NAME, authenticated_cookie)
+        response = client.get("/account/111")
+        assert response.status_code == 200
+        assert b"Resource not found" in response.data
+
+    @mock.patch("views.get_client")
+    def test_server_error_shows_banner(
+        self, mock_get_client, client, authenticated_cookie
+    ):
+        """GoogleAPIError shows temporary unavailable banner."""
+        mock_get_client.return_value = mock.MagicMock(
+            list_accounts=mock.MagicMock(side_effect=GoogleAPIError("server error"))
+        )
+        client.set_cookie(TOKEN_COOKIE_NAME, authenticated_cookie)
+        response = client.get("/")
+        assert response.status_code == 200
+        assert b"temporarily unavailable" in response.data
+
+
+class TestBreadcrumbs:
+    """Test breadcrumb navigation (UX-05)."""
+
+    @mock.patch("views.get_client")
+    def test_account_page_breadcrumb_has_accounts_link(
+        self, mock_get_client, client, authenticated_cookie, mock_client
+    ):
+        """Account page breadcrumb contains link to accounts (/)."""
+        mock_get_client.return_value = mock_client
+        client.set_cookie(TOKEN_COOKIE_NAME, authenticated_cookie)
+        response = client.get("/account/111")
+        assert b'href="/"' in response.data
+
+    @mock.patch("views.get_reviews_page")
+    @mock.patch("views.get_client")
+    def test_reviews_page_breadcrumb_has_all_levels(
+        self, mock_get_client, mock_get_page, client, authenticated_cookie, mock_client, sample_reviews
+    ):
+        """Reviews breadcrumb contains Accounts, account name, and location title."""
+        mock_get_client.return_value = mock_client
+        mock_get_page.return_value = (sample_reviews, None)
+        client.set_cookie(TOKEN_COOKIE_NAME, authenticated_cookie)
+        response = client.get("/location/aaa/reviews?account=111")
+        assert b"Accounts" in response.data
+        assert b"Test Business" in response.data
+        assert b"Main Store" in response.data
