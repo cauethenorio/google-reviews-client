@@ -8,7 +8,7 @@ class TestIndexPage:
         """GET / returns 200 with expected content."""
         response = client.get("/")
         assert response.status_code == 200
-        assert b"app is running" in response.data
+        assert b"Sign in with Google" in response.data
 
     def test_index_page_has_title(self, client):
         """Index page contains the app title."""
