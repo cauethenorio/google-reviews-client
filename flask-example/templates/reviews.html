@@ -56,11 +56,13 @@
   </div>
   {% endfor %}
 </div>
-{% if next_page_token %}
-<div class="mt-6 flex justify-end">
+
+<div class="mt-6 flex justify-between items-center">
+  <a href="/account/{{ account.name.split('/')[-1] }}/location/{{ location.location_id }}/reviews/download" class="inline-flex items-center gap-2 bg-white border border-gray-300 rounded-lg px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">Download all reviews (JSON)</a>
+  {% if next_page_token %}
   <a href="/account/{{ account.name.split('/')[-1] }}/location/{{ location.location_id }}/reviews?page_token={{ next_page_token }}" class="text-blue-600 hover:text-blue-700 font-medium text-sm">Next page &rarr;</a>
+  {% endif %}
 </div>
-{% endif %}
 {% else %}
 <div class="text-center py-12">
   <p class="text-gray-600 text-base">No reviews yet for this location.</p>

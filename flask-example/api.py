@@ -30,7 +30,7 @@ def get_client():
 
 
 def get_reviews_page(client, location_name, page_token=None):
-    """Fetch a single page of reviews, returning (reviews, next_page_token)."""
+    """Fetch a single page of reviews, returning (reviews, next_page_token, total, avg)."""
     url = f"{BUSINESS_BASE}/{location_name}/reviews"
     params = {}
     if page_token:
@@ -38,3 +38,16 @@ def get_reviews_page(client, location_name, page_token=None):
     data = client._authenticated_get(url, params=params)
     reviews = [Review.from_api_response(r) for r in data.get("reviews", [])]
     return reviews, data.get("nextPageToken"), data.get("totalReviewCount"), data.get("averageRating")
+
+
+def get_all_reviews(client, location_name):
+    """Fetch all reviews by paginating through all pages."""
+    all_reviews = []
+    page_token = None
+    while True:
+        reviews, next_token, _, _ = get_reviews_page(client, location_name, page_token)
+        all_reviews.extend(reviews)
+        if not next_token:
+            break
+        page_token = next_token
+    return all_reviews

@@ -1,9 +1,9 @@
 """Views blueprint with data browsing routes and error handling."""
 
-from api import get_client, get_reviews_page
+from api import get_all_reviews, get_client, get_reviews_page
 from auth import login_required
 from cookies import TOKEN_COOKIE_NAME, decrypt_tokens
-from flask import Blueprint, redirect, render_template, request
+from flask import Blueprint, Response, redirect, render_template, request
 
 from google_reviews_client.exceptions import (
     AuthenticationError,
@@ -233,4 +233,55 @@ def reviews(account_id, location_id):
         average_rating=average_rating,
         avg_rounded=avg_rounded,
         show_logout=True,
+    )
+
+
+@views_bp.route("/account/<account_id>/location/<location_id>/reviews/download")
+@login_required
+def download_reviews(account_id, location_id):
+    """Download all reviews for a location as a JSON zip file."""
+    import io
+    import json
+    import zipfile
+
+    client = get_client()
+    if client is None:
+        return redirect("/login")
+
+    location_name = f"accounts/{account_id}/locations/{location_id}"
+
+    try:
+        all_reviews = get_all_reviews(client, location_name)
+    except AuthenticationError:
+        return redirect("/login")
+    except (GooglePermissionError, RateLimitError, NotFoundError, GoogleAPIError):
+        return redirect(f"/account/{account_id}/location/{location_id}/reviews")
+
+    reviews_data = [
+        {
+            "reviewer": review.reviewer.display_name,
+            "rating": review.rating_value,
+            "comment": review.comment,
+            "date": review.create_time.isoformat() if review.create_time else None,
+            "reply": review.review_reply.comment if review.has_reply else None,
+        }
+        for review in all_reviews
+    ]
+
+    export = {
+        "location": location_name,
+        "exported_at": __import__("datetime").datetime.now().isoformat(),
+        "total_reviews": len(reviews_data),
+        "reviews": reviews_data,
+    }
+
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
+        zf.writestr("reviews.json", json.dumps(export, indent=2, ensure_ascii=False))
+    buf.seek(0)
+
+    return Response(
+        buf.getvalue(),
+        mimetype="application/zip",
+        headers={"Content-Disposition": "attachment; filename=reviews.json.zip"},
     )
