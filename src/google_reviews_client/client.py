@@ -156,16 +156,16 @@ class GoogleReviewsClient:
 
         """
         url = f"{BUSINESS_BASE}/{location}/reviews"
-        params: dict[str, str] = {}
-        if page_token:
-            params["pageToken"] = page_token
-        if page_size is not None:
-            params["pageSize"] = str(page_size)
-        if order_by is not None:
-            params["orderBy"] = order_by
+        params: dict[str, str] = {
+            "pageToken": page_token,
+            "pageSize": str(page_size) if page_size is not None else None,
+            "orderBy": order_by,
+        }
+
         extra_headers = {"Accept-Language": language} if language else None
         data = self._authenticated_get(url, params=params, extra_headers=extra_headers)
         reviews = [Review.from_api_response(r) for r in data.get("reviews", [])]
+
         return ReviewsPage(
             reviews=reviews,
             next_page_token=data.get("nextPageToken"),
