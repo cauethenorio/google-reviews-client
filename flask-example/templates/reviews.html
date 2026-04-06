@@ -27,7 +27,7 @@
       {{ total_review_count }} review{{ "s" if total_review_count != 1 }}
     </div>
   </div>
-  <a href="/account/{{ account.name.split('/')[-1] }}/location/{{ location.location_id }}/reviews/download{% if lang %}?lang={{ lang }}{% endif %}" class="inline-flex items-center gap-2 bg-white border border-gray-300 rounded-lg px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50">Download JSON</a>
+  <a href="/account/{{ account.name.split('/')[-1] }}/location/{{ location.location_id }}/reviews/download{% if lang %}?lang={{ lang }}{% endif %}" class="inline-flex items-center gap-2 bg-white border border-gray-300 rounded-lg px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50">Download all reviews as JSON</a>
 </div>
 {% endif %}
 {% if reviews %}
