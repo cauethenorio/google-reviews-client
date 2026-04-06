@@ -22,10 +22,10 @@ class TestLandingPage:
         assert response.status_code == 200
 
     def test_landing_page_has_title(self, client):
-        """Landing page has Google Reviews Demo in an h1."""
+        """Landing page has app name in an h1."""
         response = client.get("/")
         assert b"<h1" in response.data
-        assert b"Google Reviews Demo" in response.data
+        assert b"google-reviews-client" in response.data
 
     def test_landing_page_has_trust_statement(self, client):
         """Landing page contains trust/privacy statement (D-04)."""
