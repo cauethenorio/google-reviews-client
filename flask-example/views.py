@@ -165,6 +165,7 @@ def reviews(account_id, location_id):
     page_token = request.args.get("page_token")
     page = int(request.args.get("page", 1))
     prev_token = request.args.get("prev_token")
+    lang = request.args.get("lang")
 
     client = get_client()
     if client is None:
@@ -183,7 +184,7 @@ def reviews(account_id, location_id):
         location = next((loc for loc in locations if loc.location_id == location_id), None)
 
         review_list, next_token, total_review_count, average_rating = get_reviews_page(
-            client, location_name, page_token
+            client, location_name, page_token, language=lang
         )
     except AuthenticationError:
         return redirect("/login")
@@ -211,6 +212,7 @@ def reviews(account_id, location_id):
             avg_rounded=0,
             page=page,
             prev_token=None,
+            lang=lang,
             show_logout=True,
         )
 
@@ -239,6 +241,7 @@ def reviews(account_id, location_id):
         page=page,
         prev_token=prev_token,
         current_page_token=page_token,
+        lang=lang,
         show_logout=True,
     )
 
@@ -251,6 +254,7 @@ def download_reviews(account_id, location_id):
     import json
     import zipfile
 
+    lang = request.args.get("lang")
     client = get_client()
     if client is None:
         return redirect("/login")
@@ -258,7 +262,7 @@ def download_reviews(account_id, location_id):
     location_name = f"accounts/{account_id}/locations/{location_id}"
 
     try:
-        all_reviews = get_all_reviews(client, location_name)
+        all_reviews = get_all_reviews(client, location_name, language=lang)
     except AuthenticationError:
         return redirect("/login")
     except (GooglePermissionError, RateLimitError, NotFoundError, GoogleAPIError):

@@ -3,16 +3,35 @@
 {% block content %}
 {% include "_breadcrumb.html" %}
 {% include "_error.html" %}
-<h1 class="text-2xl font-bold text-gray-900 mb-6">Reviews for {{ location.title or "Location" }}</h1>
+<div class="flex items-center justify-between mb-6">
+  <h1 class="text-2xl font-bold text-gray-900">Reviews for {{ location.title or "Location" }}</h1>
+  <form method="get" class="flex items-center gap-2">
+    {% if page_token %}<input type="hidden" name="page_token" value="{{ page_token }}">{% endif %}
+    <label for="lang" class="text-sm text-gray-500">Language:</label>
+    <select name="lang" id="lang" onchange="this.form.submit()" class="text-sm border border-gray-300 rounded px-2 py-1 bg-white">
+      <option value="">Default</option>
+      <option value="en" {{ 'selected' if lang == 'en' }}>English</option>
+      <option value="pt-BR" {{ 'selected' if lang == 'pt-BR' }}>Portugu&ecirc;s (BR)</option>
+      <option value="es" {{ 'selected' if lang == 'es' }}>Espa&ntilde;ol</option>
+      <option value="fr" {{ 'selected' if lang == 'fr' }}>Fran&ccedil;ais</option>
+      <option value="de" {{ 'selected' if lang == 'de' }}>Deutsch</option>
+      <option value="ja" {{ 'selected' if lang == 'ja' }}>&#26085;&#26412;&#35486;</option>
+      <option value="zh-CN" {{ 'selected' if lang == 'zh-CN' }}>&#20013;&#25991;</option>
+    </select>
+  </form>
+</div>
 {% if total_review_count is not none %}
-<div class="bg-white rounded-lg shadow-sm border border-gray-200 px-4 py-4 mb-6 flex items-center gap-6">
-  <div>
-    <span class="text-xl font-bold text-gray-900">{{ average_rating }}</span>
-    <span class="text-amber-500 text-xl tracking-wide ml-1">{{ "\u2605" * avg_rounded }}{{ "\u2606" * (5 - avg_rounded) }}</span>
+<div class="bg-white rounded-lg shadow-sm border border-gray-200 px-4 py-4 mb-6 flex items-center justify-between">
+  <div class="flex items-center gap-6">
+    <div>
+      <span class="text-xl font-bold text-gray-900">{{ average_rating }}</span>
+      <span class="text-amber-500 text-xl tracking-wide ml-1">{{ "\u2605" * avg_rounded }}{{ "\u2606" * (5 - avg_rounded) }}</span>
+    </div>
+    <div class="text-sm text-gray-500">
+      {{ total_review_count }} review{{ "s" if total_review_count != 1 }}
+    </div>
   </div>
-  <div class="text-sm text-gray-500">
-    {{ total_review_count }} review{{ "s" if total_review_count != 1 }}
-  </div>
+  <a href="/account/{{ account.name.split('/')[-1] }}/location/{{ location.location_id }}/reviews/download{% if lang %}?lang={{ lang }}{% endif %}" class="inline-flex items-center gap-2 bg-white border border-gray-300 rounded-lg px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50">Download JSON</a>
 </div>
 {% endif %}
 {% if reviews %}
@@ -57,19 +76,17 @@
   {% endfor %}
 </div>
 
-<div class="mt-6 flex items-center justify-between">
-  <a href="/account/{{ account.name.split('/')[-1] }}/location/{{ location.location_id }}/reviews/download" class="inline-flex items-center gap-2 bg-white border border-gray-300 rounded-lg px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">Download all reviews (JSON)</a>
-  <div class="flex items-center gap-4">
-    {% if page > 1 and prev_token %}
-    <a href="/account/{{ account.name.split('/')[-1] }}/location/{{ location.location_id }}/reviews?page_token={{ prev_token }}&page={{ page - 1 }}{% if current_page_token %}&prev_token={{ current_page_token }}{% endif %}" class="text-blue-600 hover:text-blue-700 font-medium text-sm">&larr; Previous page</a>
-    {% elif page > 1 %}
-    <a href="/account/{{ account.name.split('/')[-1] }}/location/{{ location.location_id }}/reviews?page={{ page - 1 }}" class="text-blue-600 hover:text-blue-700 font-medium text-sm">&larr; Previous page</a>
-    {% endif %}
-    <span class="text-sm text-gray-500">Page {{ page }}</span>
-    {% if next_page_token %}
-    <a href="/account/{{ account.name.split('/')[-1] }}/location/{{ location.location_id }}/reviews?page_token={{ next_page_token }}&page={{ page + 1 }}&prev_token={{ current_page_token or '' }}" class="text-blue-600 hover:text-blue-700 font-medium text-sm">Next page &rarr;</a>
-    {% endif %}
-  </div>
+<div class="mt-6 flex items-center justify-end gap-4">
+  {% set lang_param = "&lang=" ~ lang if lang else "" %}
+  {% if page > 1 and prev_token %}
+  <a href="/account/{{ account.name.split('/')[-1] }}/location/{{ location.location_id }}/reviews?page_token={{ prev_token }}&page={{ page - 1 }}{% if current_page_token %}&prev_token={{ current_page_token }}{% endif %}{{ lang_param }}" class="text-blue-600 hover:text-blue-700 font-medium text-sm">&larr; Previous page</a>
+  {% elif page > 1 %}
+  <a href="/account/{{ account.name.split('/')[-1] }}/location/{{ location.location_id }}/reviews?page={{ page - 1 }}{{ lang_param }}" class="text-blue-600 hover:text-blue-700 font-medium text-sm">&larr; Previous page</a>
+  {% endif %}
+  <span class="text-sm text-gray-500">Page {{ page }}</span>
+  {% if next_page_token %}
+  <a href="/account/{{ account.name.split('/')[-1] }}/location/{{ location.location_id }}/reviews?page_token={{ next_page_token }}&page={{ page + 1 }}&prev_token={{ current_page_token or '' }}{{ lang_param }}" class="text-blue-600 hover:text-blue-700 font-medium text-sm">Next page &rarr;</a>
+  {% endif %}
 </div>
 {% else %}
 <div class="text-center py-12">
@@ -80,16 +97,13 @@
 <div class="mt-8 pt-8 border-t border-gray-200">
   <h2 class="text-lg font-bold text-gray-900 mb-2">Get this data programmatically</h2>
   <p class="text-sm text-gray-600 mb-4">Use the google-reviews-client library to access these reviews in your own code:</p>
-  <div class="relative">
-    <button onclick="navigator.clipboard.writeText(document.getElementById('code-snippet').textContent).then(()=>{this.textContent='Copied!';setTimeout(()=>this.textContent='Copy',2000)})" class="absolute top-2 right-2 bg-white border border-gray-300 rounded px-2 py-1 text-xs text-gray-600 hover:bg-gray-50">Copy</button>
-    <pre class="bg-gray-50 rounded-lg p-4 font-mono text-sm overflow-x-auto"><code id="code-snippet">pip install google-reviews-client
+  <pre class="bg-gray-900 text-gray-100 rounded-lg p-4 font-mono text-sm overflow-x-auto border border-gray-700">pip install google-reviews-client
 
 from google_reviews_client import GoogleReviewsClient
 
 client = GoogleReviewsClient(credentials)
 for review in client.list_reviews("{{ location.name }}"):
-    print(review.reviewer.display_name, review.star_rating, review.comment)</code></pre>
-  </div>
+    print(review.reviewer.display_name, review.star_rating, review.comment)</pre>
 </div>
 {% endif %}
 {% endblock %}

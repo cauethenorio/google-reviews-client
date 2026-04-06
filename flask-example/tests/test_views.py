@@ -572,14 +572,14 @@ class TestReviewsPolish:
 
     @mock.patch("views.get_reviews_page")
     @mock.patch("views.get_client")
-    def test_code_snippet_copy_button(
+    def test_code_snippet_dark_theme(
         self, mock_get_client, mock_get_page, client, authenticated_cookie, mock_client, polish_reviews
     ):
-        """Code snippet has copy button with clipboard API."""
+        """Code snippet uses dark theme styling."""
         response = self._get_reviews_page(
             mock_get_client, mock_get_page, client, authenticated_cookie, mock_client, polish_reviews
         )
-        assert b"navigator.clipboard.writeText" in response.data
+        assert b"bg-gray-900" in response.data
 
     @mock.patch("views.get_reviews_page")
     @mock.patch("views.get_client")
