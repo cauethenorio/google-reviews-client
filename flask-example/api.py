@@ -35,6 +35,8 @@ def get_reviews_page(client, location_name, page_token=None, language=None):
     params = {}
     if page_token:
         params["pageToken"] = page_token
+    if language:
+        language = language.strip()
     extra_headers = {"Accept-Language": language} if language else None
     data = client._authenticated_get(url, params=params, extra_headers=extra_headers)
     reviews = [Review.from_api_response(r) for r in data.get("reviews", [])]

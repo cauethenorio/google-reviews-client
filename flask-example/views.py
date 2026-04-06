@@ -160,17 +160,18 @@ def location_detail(account_id, location_id):
 
 def _fetch_reviews(client, location_name, page_token, lang):
     """Fetch reviews with language fallback. Returns (reviews, next_token, total, avg, lang, lang_error)."""
-    lang_error = None
-    try:
-        reviews, next_token, total, avg = get_reviews_page(client, location_name, page_token, language=lang)
-    except (GoogleAPIError, GooglePermissionError, RateLimitError, NotFoundError):
-        if not lang:
-            raise
-        # Language may be invalid — retry without it
+    if lang:
+        try:
+            reviews, next_token, total, avg = get_reviews_page(client, location_name, page_token, language=lang)
+        except Exception:
+            lang_failed = True  # noqa: F841
+        else:
+            return reviews, next_token, total, avg, lang, None
         reviews, next_token, total, avg = get_reviews_page(client, location_name, page_token)
         lang_error = f'Language "{lang}" is not supported. Showing reviews in the default language.'
-        lang = None
-    return reviews, next_token, total, avg, lang, lang_error
+        return reviews, next_token, total, avg, None, lang_error
+    reviews, next_token, total, avg = get_reviews_page(client, location_name, page_token)
+    return reviews, next_token, total, avg, lang, None
 
 
 @views_bp.route("/account/<account_id>/location/<location_id>/reviews")
