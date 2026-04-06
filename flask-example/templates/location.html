@@ -9,5 +9,74 @@
   {% if location.language_code %}<span>&middot; Language: {{ location.language_code }}</span>{% endif %}
   <span>&middot; Account: {{ account.account_name }}</span>
 </div>
-<a href="/account/{{ account.name.split('/')[-1] }}/location/{{ location.location_id }}/reviews" class="inline-block bg-blue-600 text-white rounded-lg px-6 py-3 hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 font-medium">View Reviews</a>
+
+{% if location.address or location.phone_numbers or location.website_uri %}
+<div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-4">
+  <h2 class="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-3">Contact</h2>
+  <div class="space-y-2 text-sm text-gray-700">
+    {% if location.address and location.address.formatted %}
+    <div class="flex items-start gap-2">
+      <svg class="w-4 h-4 text-gray-400 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a2 2 0 01-2.828 0l-4.243-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+      <span>{{ location.address.formatted }}</span>
+    </div>
+    {% endif %}
+    {% if location.phone_numbers and location.phone_numbers.primary_phone %}
+    <div class="flex items-center gap-2">
+      <svg class="w-4 h-4 text-gray-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
+      <a href="tel:{{ location.phone_numbers.primary_phone }}" class="text-blue-600 hover:underline">{{ location.phone_numbers.primary_phone }}</a>
+    </div>
+    {% endif %}
+    {% if location.website_uri %}
+    <div class="flex items-center gap-2">
+      <svg class="w-4 h-4 text-gray-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"/></svg>
+      <a href="{{ location.website_uri }}" target="_blank" rel="noopener" class="text-blue-600 hover:underline truncate max-w-xs">{{ location.website_uri | truncate(50) }}</a>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endif %}
+
+{% if location.categories %}
+<div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-4">
+  <h2 class="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-3">Categories</h2>
+  <div class="flex flex-wrap gap-2">
+    {% if location.categories.primary_category and location.categories.primary_category.display_name %}
+    <span class="inline-block text-sm font-medium bg-blue-100 text-blue-800 rounded-full px-3 py-1">{{ location.categories.primary_category.display_name }}</span>
+    {% endif %}
+    {% for cat in location.categories.additional_categories %}
+    {% if cat.display_name %}
+    <span class="inline-block text-xs font-medium bg-gray-100 text-gray-600 rounded-full px-2.5 py-0.5">{{ cat.display_name }}</span>
+    {% endif %}
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+{% if location.regular_hours and location.regular_hours.periods %}
+<div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-4">
+  <h2 class="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-3">Business Hours</h2>
+  <dl class="space-y-1 text-sm">
+    {% for period in location.regular_hours.periods %}
+    <div class="flex justify-between">
+      <dt class="text-gray-700 font-medium">{{ period.open_day | replace('_', ' ') | title }}</dt>
+      <dd class="text-gray-500">{{ period.open_time }} &ndash; {{ period.close_time }}</dd>
+    </div>
+    {% endfor %}
+  </dl>
+</div>
+{% endif %}
+
+{% if location.profile and location.profile.description %}
+<div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-4">
+  <h2 class="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-3">About</h2>
+  <p class="text-sm text-gray-700 leading-relaxed">{{ location.profile.description }}</p>
+</div>
+{% endif %}
+
+<div class="flex flex-wrap items-center gap-3 mt-6">
+  <a href="/account/{{ account.name.split('/')[-1] }}/location/{{ location.location_id }}/reviews" class="inline-block bg-blue-600 text-white rounded-lg px-6 py-3 hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 font-medium">View Reviews</a>
+  {% if location.metadata and location.metadata.maps_uri %}
+  <a href="{{ location.metadata.maps_uri }}" target="_blank" rel="noopener" class="inline-block bg-white text-gray-700 border border-gray-300 rounded-lg px-6 py-3 hover:bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 font-medium">View on Google Maps</a>
+  {% endif %}
+</div>
 {% endblock %}
