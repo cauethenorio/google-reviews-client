@@ -6,18 +6,9 @@
 <div class="flex items-center justify-between mb-6">
   <h1 class="text-2xl font-bold text-gray-900">Reviews for {{ location.title or "Location" }}</h1>
   <form method="get" class="flex items-center gap-2">
-    {% if page_token %}<input type="hidden" name="page_token" value="{{ page_token }}">{% endif %}
     <label for="lang" class="text-sm text-gray-500">Language:</label>
-    <select name="lang" id="lang" onchange="this.form.submit()" class="text-sm border border-gray-300 rounded px-2 py-1 bg-white">
-      <option value="">Default</option>
-      <option value="en" {{ 'selected' if lang == 'en' }}>English</option>
-      <option value="pt-BR" {{ 'selected' if lang == 'pt-BR' }}>Portugu&ecirc;s (BR)</option>
-      <option value="es" {{ 'selected' if lang == 'es' }}>Espa&ntilde;ol</option>
-      <option value="fr" {{ 'selected' if lang == 'fr' }}>Fran&ccedil;ais</option>
-      <option value="de" {{ 'selected' if lang == 'de' }}>Deutsch</option>
-      <option value="ja" {{ 'selected' if lang == 'ja' }}>&#26085;&#26412;&#35486;</option>
-      <option value="zh-CN" {{ 'selected' if lang == 'zh-CN' }}>&#20013;&#25991;</option>
-    </select>
+    <input type="text" name="lang" id="lang" value="{{ lang or '' }}" placeholder="en, pt-BR, es..." class="text-sm border border-gray-300 rounded px-2 py-1 bg-white w-24">
+    <button type="submit" class="text-sm bg-white border border-gray-300 rounded px-2 py-1 text-gray-600 hover:bg-gray-50">Go</button>
   </form>
 </div>
 {% if total_review_count is not none %}

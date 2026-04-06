@@ -166,6 +166,8 @@ def reviews(account_id, location_id):
     page = int(request.args.get("page", 1))
     prev_token = request.args.get("prev_token")
     lang = request.args.get("lang")
+    if lang is None:
+        lang = request.accept_languages.best
 
     client = get_client()
     if client is None:
