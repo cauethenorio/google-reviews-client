@@ -7,5 +7,5 @@
 {% if location.store_code %}
 <p class="text-sm text-gray-500 mb-6">Store code: {{ location.store_code }}</p>
 {% endif %}
-<a href="/location/{{ location.location_id }}/reviews?account={{ account.name.split('/')[-1] }}" class="inline-block bg-blue-600 text-white rounded-lg px-6 py-3 hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 font-medium">View Reviews</a>
+<a href="/account/{{ account.name.split('/')[-1] }}/location/{{ location.location_id }}/reviews" class="inline-block bg-blue-600 text-white rounded-lg px-6 py-3 hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 font-medium">View Reviews</a>
 {% endblock %}

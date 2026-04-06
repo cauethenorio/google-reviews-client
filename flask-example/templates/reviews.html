@@ -58,7 +58,7 @@
 </div>
 {% if next_page_token %}
 <div class="mt-6 flex justify-end">
-  <a href="/location/{{ location.location_id }}/reviews?account={{ account.name.split('/')[-1] }}&page_token={{ next_page_token }}" class="text-blue-600 hover:text-blue-700 font-medium text-sm">Next page &rarr;</a>
+  <a href="/account/{{ account.name.split('/')[-1] }}/location/{{ location.location_id }}/reviews?page_token={{ next_page_token }}" class="text-blue-600 hover:text-blue-700 font-medium text-sm">Next page &rarr;</a>
 </div>
 {% endif %}
 {% else %}

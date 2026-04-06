@@ -91,7 +91,7 @@ def account_detail(account_id):
 
     if len(locations) == 1:
         loc = locations[0]
-        return redirect(f"/location/{loc.location_id}?account={account_id}")
+        return redirect(f"/account/{account_id}/location/{loc.location_id}")
 
     breadcrumbs = [{"label": "Accounts", "url": "/"}, {"label": account.account_name, "url": ""}]
     return render_template(
@@ -99,14 +99,10 @@ def account_detail(account_id):
     )
 
 
-@views_bp.route("/location/<location_id>")
+@views_bp.route("/account/<account_id>/location/<location_id>")
 @login_required
-def location_detail(location_id):
+def location_detail(account_id, location_id):
     """Show details for a specific location."""
-    account_id = request.args.get("account")
-    if not account_id:
-        return redirect("/")
-
     client = get_client()
     if client is None:
         return redirect("/login")
@@ -162,14 +158,11 @@ def location_detail(location_id):
     )
 
 
-@views_bp.route("/location/<location_id>/reviews")
+@views_bp.route("/account/<account_id>/location/<location_id>/reviews")
 @login_required
-def reviews(location_id):
+def reviews(account_id, location_id):
     """Show paginated reviews for a location."""
-    account_id = request.args.get("account")
     page_token = request.args.get("page_token")
-    if not account_id:
-        return redirect("/")
 
     client = get_client()
     if client is None:
@@ -197,7 +190,7 @@ def reviews(location_id):
         breadcrumbs = [
             {"label": "Accounts", "url": "/"},
             {"label": account.account_name, "url": f"/account/{account_id}"},
-            {"label": "Location", "url": f"/location/{location_id}?account={account_id}"},
+            {"label": "Location", "url": f"/account/{account_id}/location/{location_id}"},
             {"label": "Reviews", "url": ""},
         ]
         from google_reviews_client.models import Location
@@ -225,7 +218,7 @@ def reviews(location_id):
     breadcrumbs = [
         {"label": "Accounts", "url": "/"},
         {"label": account.account_name, "url": f"/account/{account_id}"},
-        {"label": location.title or "Location", "url": f"/location/{location_id}?account={account_id}"},
+        {"label": location.title or "Location", "url": f"/account/{account_id}/location/{location_id}"},
         {"label": "Reviews", "url": ""},
     ]
     avg_rounded = round(average_rating) if average_rating else 0

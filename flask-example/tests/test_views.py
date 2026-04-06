@@ -143,7 +143,7 @@ class TestAccountDetail:
         mock_get_client.return_value = mock_client
         client.set_cookie(TOKEN_COOKIE_NAME, authenticated_cookie)
         response = client.get("/account/111")
-        assert b"/location/aaa?account=111" in response.data
+        assert b"/account/111/location/aaa" in response.data
 
     @mock.patch("views.get_client")
     def test_account_empty_locations(self, mock_get_client, client, authenticated_cookie, mock_client):
@@ -174,10 +174,10 @@ class TestLocationDetail:
 
     @mock.patch("views.get_client")
     def test_location_shows_details(self, mock_get_client, client, authenticated_cookie, mock_client):
-        """GET /location/aaa?account=111 shows location details."""
+        """GET /account/111/location/aaa shows location details."""
         mock_get_client.return_value = mock_client
         client.set_cookie(TOKEN_COOKIE_NAME, authenticated_cookie)
-        response = client.get("/location/aaa?account=111")
+        response = client.get("/account/111/location/aaa")
         assert response.status_code == 200
         assert b"Main Store" in response.data
 
@@ -186,27 +186,21 @@ class TestLocationDetail:
         """Location page has View Reviews link."""
         mock_get_client.return_value = mock_client
         client.set_cookie(TOKEN_COOKIE_NAME, authenticated_cookie)
-        response = client.get("/location/aaa?account=111")
+        response = client.get("/account/111/location/aaa")
         assert b"View Reviews" in response.data
-        assert b"/location/aaa/reviews?account=111" in response.data
+        assert b"/account/111/location/aaa/reviews" in response.data
 
     @mock.patch("views.get_client")
     def test_location_has_breadcrumb(self, mock_get_client, client, authenticated_cookie, mock_client):
         """Location page has breadcrumb navigation."""
         mock_get_client.return_value = mock_client
         client.set_cookie(TOKEN_COOKIE_NAME, authenticated_cookie)
-        response = client.get("/location/aaa?account=111")
+        response = client.get("/account/111/location/aaa")
         assert b'aria-label="Breadcrumb"' in response.data
 
-    def test_location_without_account_param_redirects(self, client, authenticated_cookie):
-        """GET /location/aaa without ?account= redirects to /."""
-        client.set_cookie(TOKEN_COOKIE_NAME, authenticated_cookie)
-        response = client.get("/location/aaa")
-        assert response.status_code == 302
-
     def test_location_requires_auth(self, client):
-        """GET /location/aaa?account=111 without cookie redirects."""
-        response = client.get("/location/aaa?account=111")
+        """GET /account/111/location/aaa without cookie redirects."""
+        response = client.get("/account/111/location/aaa")
         assert response.status_code == 302
 
 
@@ -222,7 +216,7 @@ class TestReviewsList:
         mock_get_client.return_value = mock_client
         mock_get_page.return_value = (sample_reviews, None, 42, 4.3)
         client.set_cookie(TOKEN_COOKIE_NAME, authenticated_cookie)
-        response = client.get("/location/aaa/reviews?account=111")
+        response = client.get("/account/111/location/aaa/reviews")
         assert response.status_code == 200
         assert b"Alice" in response.data
         assert b"Great place!" in response.data
@@ -237,7 +231,7 @@ class TestReviewsList:
         mock_get_client.return_value = mock_client
         mock_get_page.return_value = (sample_reviews, None, 42, 4.3)
         client.set_cookie(TOKEN_COOKIE_NAME, authenticated_cookie)
-        response = client.get("/location/aaa/reviews?account=111")
+        response = client.get("/account/111/location/aaa/reviews")
         assert b"Mar 15, 2025" in response.data
 
     @mock.patch("views.get_reviews_page")
@@ -249,7 +243,7 @@ class TestReviewsList:
         mock_get_client.return_value = mock_client
         mock_get_page.return_value = (sample_reviews, None, 42, 4.3)
         client.set_cookie(TOKEN_COOKIE_NAME, authenticated_cookie)
-        response = client.get("/location/aaa/reviews?account=111")
+        response = client.get("/account/111/location/aaa/reviews")
         assert b"Owner reply" in response.data
         assert b"Thank you!" in response.data
 
@@ -260,7 +254,7 @@ class TestReviewsList:
         mock_get_client.return_value = mock_client
         mock_get_page.return_value = ([], None, None, None)
         client.set_cookie(TOKEN_COOKIE_NAME, authenticated_cookie)
-        response = client.get("/location/aaa/reviews?account=111")
+        response = client.get("/account/111/location/aaa/reviews")
         assert b"No reviews yet for this location" in response.data
 
     @mock.patch("views.get_reviews_page")
@@ -272,18 +266,12 @@ class TestReviewsList:
         mock_get_client.return_value = mock_client
         mock_get_page.return_value = (sample_reviews, None, 42, 4.3)
         client.set_cookie(TOKEN_COOKIE_NAME, authenticated_cookie)
-        response = client.get("/location/aaa/reviews?account=111")
+        response = client.get("/account/111/location/aaa/reviews")
         assert b'aria-label="Breadcrumb"' in response.data
 
     def test_reviews_requires_auth(self, client):
-        """GET /location/aaa/reviews?account=111 without cookie redirects."""
-        response = client.get("/location/aaa/reviews?account=111")
-        assert response.status_code == 302
-
-    def test_reviews_without_account_param_redirects(self, client, authenticated_cookie):
-        """GET /location/aaa/reviews without ?account= redirects to /."""
-        client.set_cookie(TOKEN_COOKIE_NAME, authenticated_cookie)
-        response = client.get("/location/aaa/reviews")
+        """GET /account/111/location/aaa/reviews without cookie redirects."""
+        response = client.get("/account/111/location/aaa/reviews")
         assert response.status_code == 302
 
 
@@ -299,7 +287,7 @@ class TestReviewsPagination:
         mock_get_client.return_value = mock_client
         mock_get_page.return_value = (sample_reviews, "next-tok", 42, 4.3)
         client.set_cookie(TOKEN_COOKIE_NAME, authenticated_cookie)
-        response = client.get("/location/aaa/reviews?account=111")
+        response = client.get("/account/111/location/aaa/reviews")
         assert b"Next page" in response.data
         assert b"page_token=next-tok" in response.data
 
@@ -312,7 +300,7 @@ class TestReviewsPagination:
         mock_get_client.return_value = mock_client
         mock_get_page.return_value = (sample_reviews, None, 42, 4.3)
         client.set_cookie(TOKEN_COOKIE_NAME, authenticated_cookie)
-        response = client.get("/location/aaa/reviews?account=111")
+        response = client.get("/account/111/location/aaa/reviews")
         assert b"Next page" not in response.data
 
     @mock.patch("views.get_reviews_page")
@@ -324,7 +312,7 @@ class TestReviewsPagination:
         mock_get_client.return_value = mock_client
         mock_get_page.return_value = (sample_reviews, None, 42, 4.3)
         client.set_cookie(TOKEN_COOKIE_NAME, authenticated_cookie)
-        client.get("/location/aaa/reviews?account=111&page_token=tok1")
+        client.get("/account/111/location/aaa/reviews?page_token=tok1")
         mock_get_page.assert_called_once()
         call_args = mock_get_page.call_args
         assert call_args[0][2] == "tok1" or call_args[1].get("page_token") == "tok1"
@@ -411,7 +399,7 @@ class TestBreadcrumbs:
         mock_get_client.return_value = mock_client
         mock_get_page.return_value = (sample_reviews, None, 42, 4.3)
         client.set_cookie(TOKEN_COOKIE_NAME, authenticated_cookie)
-        response = client.get("/location/aaa/reviews?account=111")
+        response = client.get("/account/111/location/aaa/reviews")
         assert b"Accounts" in response.data
         assert b"Test Business" in response.data
         assert b"Main Store" in response.data
@@ -427,7 +415,7 @@ class TestReviewsPolish:
         mock_get_client.return_value = mock_client
         mock_get_page.return_value = (reviews, None, total, avg)
         client.set_cookie(TOKEN_COOKIE_NAME, authenticated_cookie)
-        return client.get("/location/aaa/reviews?account=111")
+        return client.get("/account/111/location/aaa/reviews")
 
     # --- UX-03: Star Ratings ---
 

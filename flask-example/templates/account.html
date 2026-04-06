@@ -7,7 +7,7 @@
 {% if locations %}
 <div class="space-y-3">
   {% for loc in locations %}
-  <a href="/location/{{ loc.location_id }}?account={{ account.name.split('/')[-1] }}" class="block bg-white rounded-lg shadow-sm border border-gray-200 px-4 py-4 hover:shadow-md transition-shadow">
+  <a href="/account/{{ account.name.split('/')[-1] }}/location/{{ loc.location_id }}" class="block bg-white rounded-lg shadow-sm border border-gray-200 px-4 py-4 hover:shadow-md transition-shadow">
     <div class="text-lg font-bold text-gray-900">{{ loc.title or "Unnamed location" }}</div>
     {% if loc.store_code %}
     <div class="text-sm text-gray-500">{{ loc.store_code }}</div>
