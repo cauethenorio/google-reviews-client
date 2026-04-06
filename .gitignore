@@ -132,6 +132,8 @@ cython_debug/
 # PyPI configuration file
 .pypirc
 .planning/
+.claude/
+.playwright-cli/
 
 # Generated artifacts
 docs/plans/
