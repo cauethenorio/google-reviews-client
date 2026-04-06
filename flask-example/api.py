@@ -7,8 +7,6 @@ from flask import current_app, request
 from google.oauth2.credentials import Credentials
 
 from google_reviews_client.client import GoogleReviewsClient
-from google_reviews_client.constants import BUSINESS_BASE
-from google_reviews_client.models import Review
 
 
 def get_client():
@@ -30,17 +28,11 @@ def get_client():
 
 
 def get_reviews_page(client, location_name, page_token=None, language=None, page_size=50):
-    """Fetch a single page of reviews, returning (reviews, next_page_token, total, avg)."""
-    url = f"{BUSINESS_BASE}/{location_name}/reviews"
-    params = {"pageSize": page_size}
-    if page_token:
-        params["pageToken"] = page_token
+    """Fetch a single page of reviews using the client's public API."""
     if language:
         language = language.strip()
-    extra_headers = {"Accept-Language": language} if language else None
-    data = client._authenticated_get(url, params=params, extra_headers=extra_headers)
-    reviews = [Review.from_api_response(r) for r in data.get("reviews", [])]
-    return reviews, data.get("nextPageToken"), data.get("totalReviewCount"), data.get("averageRating")
+    page = client.get_reviews_page(location_name, page_token=page_token, page_size=page_size, language=language)
+    return page.reviews, page.next_page_token, page.total_review_count, page.average_rating
 
 
 def get_all_reviews(client, location_name, language=None):
