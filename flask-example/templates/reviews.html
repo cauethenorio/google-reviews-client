@@ -61,7 +61,7 @@
           <span class="text-sm text-gray-500">{{ review.create_time.strftime('%b %d, %Y') }}</span>
         </div>
         {% if review.comment %}
-        <p class="text-base text-gray-900 mb-2">{{ review.comment[:200] }}{% if review.comment|length > 200 %}...{% endif %}</p>
+        <p class="text-base text-gray-900 mb-2">{{ review.comment }}</p>
         {% endif %}
         <p class="text-sm text-gray-700">{{ review.reviewer.display_name }}</p>
         {% if review.has_reply %}
