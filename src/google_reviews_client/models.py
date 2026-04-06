@@ -1,5 +1,6 @@
 """Data models for Google Business Profile API responses."""
 
+from collections.abc import Generator, Iterator
 from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
@@ -139,6 +140,47 @@ class ReviewsPage:
     next_page_token: str | None = None
     total_review_count: int | None = None
     average_rating: float | None = None
+
+
+def _chain(first: list, rest: Iterator) -> Generator:
+    """Yield all items from first, then all items from rest."""
+    yield from first
+    yield from rest
+
+
+class ReviewsResult:
+    """Result of list_reviews() -- eager first page with lazy remaining pages.
+
+    Metadata (total_review_count, average_rating) is available immediately
+    after construction. Reviews are accessed via iteration or .reviews property,
+    yielding first-page reviews from memory then lazily fetching subsequent pages.
+    """
+
+    def __init__(
+        self,
+        *,
+        first_page_reviews: list[Review],
+        remaining: Iterator[Review],
+        total_review_count: int | None,
+        average_rating: float | None,
+    ):
+        """Initialize with first page reviews, remaining generator, and metadata."""
+        self.total_review_count = total_review_count
+        self.average_rating = average_rating
+        self._reviews = _chain(first_page_reviews, remaining)
+
+    @property
+    def reviews(self) -> Generator:
+        """Single-use generator: first page from memory, then lazy remaining pages."""
+        return self._reviews
+
+    def __iter__(self):
+        """Iterate over all reviews (first page + remaining)."""
+        return self._reviews
+
+    def __next__(self):
+        """Return next review from the generator."""
+        return next(self._reviews)
 
 
 @dataclass

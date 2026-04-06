@@ -19,7 +19,7 @@ from .exceptions import (
     ValidationError,
 )
 from .http_client import BaseHTTPClient, HttpxHTTPClient
-from .models import Account, Location, Review, Reviewer, ReviewReply, ReviewsPage, StarRating
+from .models import Account, Location, Review, Reviewer, ReviewReply, ReviewsPage, ReviewsResult, StarRating
 
 __all__ = [
     "Account",
@@ -38,6 +38,7 @@ __all__ = [
     "ReviewReply",
     "Reviewer",
     "ReviewsPage",
+    "ReviewsResult",
     "StarRating",
     "ValidationError",
     "__version__",

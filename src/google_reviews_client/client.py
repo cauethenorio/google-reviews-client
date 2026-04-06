@@ -21,7 +21,7 @@ from .exceptions import (
 )
 from .http_client.base_client import BaseHTTPClient
 from .http_client.httpx_client import HttpxHTTPClient
-from .models import Account, Location, Review, ReviewsPage
+from .models import Account, Location, Review, ReviewsPage, ReviewsResult
 
 logger = logging.getLogger(__name__)
 
@@ -180,17 +180,22 @@ class GoogleReviewsClient:
         since: datetime | None = None,
         order_by: str | None = None,
         language: str | None = None,
-    ) -> Iterator[Review]:
-        """Iterate over reviews for the given location.
+        page_size: int | None = None,
+    ) -> ReviewsResult:
+        """Fetch reviews for the given location.
+
+        Returns a ReviewsResult with metadata (total_review_count, average_rating)
+        available immediately. Reviews are yielded lazily via iteration.
 
         Args:
             location: Location resource name (e.g., "accounts/123/locations/456").
             since: Only yield reviews updated after this timestamp.
             order_by: Sort order string (e.g., "updateTime desc").
             language: Accept-Language header value for review translation.
+            page_size: Number of reviews per page.
 
-        Yields:
-            Review objects from the API, one at a time.
+        Returns:
+            ReviewsResult with eager first page and lazy remaining pages.
 
         """
         # When syncing, order by updateTime desc so we can stop early
@@ -198,13 +203,39 @@ class GoogleReviewsClient:
         if since is not None and order_by is None:
             order_by = "updateTime desc"
 
-        page_token = None
-        while True:
-            page = self.get_reviews_page(location, page_token=page_token, order_by=order_by, language=language)
-            for review in page.reviews:
-                if since is not None and review.update_time <= since:
-                    return
-                yield review
-            page_token = page.next_page_token
-            if not page_token:
+        # Eagerly fetch first page
+        first_page = self.get_reviews_page(location, page_size=page_size, order_by=order_by, language=language)
+
+        # Filter first page reviews by since
+        first_reviews = []
+        stop_early = False
+        for review in first_page.reviews:
+            if since is not None and review.update_time <= since:
+                stop_early = True
                 break
+            first_reviews.append(review)
+
+        def _remaining() -> Iterator[Review]:
+            if stop_early:
+                return
+            page_token = first_page.next_page_token
+            while page_token:
+                page = self.get_reviews_page(
+                    location,
+                    page_token=page_token,
+                    page_size=page_size,
+                    order_by=order_by,
+                    language=language,
+                )
+                for review in page.reviews:
+                    if since is not None and review.update_time <= since:
+                        return
+                    yield review
+                page_token = page.next_page_token
+
+        return ReviewsResult(
+            first_page_reviews=first_reviews,
+            remaining=_remaining(),
+            total_review_count=first_page.total_review_count,
+            average_rating=first_page.average_rating,
+        )
