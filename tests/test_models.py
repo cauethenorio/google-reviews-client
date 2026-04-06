@@ -1,6 +1,16 @@
 from datetime import datetime, timezone
 
-from google_reviews_client.models import Account, Location, Review, Reviewer, ReviewReply, ReviewsPage, StarRating
+from google_reviews_client.models import (
+    Account,
+    Location,
+    Review,
+    Reviewer,
+    ReviewReply,
+    ReviewsPage,
+    ReviewsResult,
+    StarRating,
+    _chain,
+)
 
 
 class TestAccountFromApiResponse:
@@ -268,3 +278,82 @@ class TestReviewsPage:
         assert page.next_page_token == "tok123"
         assert page.total_review_count == 42
         assert page.average_rating == 4.5
+
+
+def _make_review(rid):
+    """Helper to create a Review with minimal data."""
+    return Review.from_api_response({
+        "reviewId": rid,
+        "reviewer": {"displayName": "User"},
+        "starRating": "FIVE",
+        "comment": "Good",
+        "createTime": "2024-01-01T00:00:00Z",
+        "updateTime": "2024-01-01T00:00:00Z",
+    })
+
+
+class TestChain:
+    def test_chain_concatenates_first_and_rest(self):
+        assert list(_chain([1, 2], iter([3, 4]))) == [1, 2, 3, 4]
+
+    def test_chain_empty_first(self):
+        assert list(_chain([], iter([1, 2]))) == [1, 2]
+
+    def test_chain_empty_rest(self):
+        assert list(_chain([1, 2], iter([]))) == [1, 2]
+
+
+class TestReviewsResult:
+    def test_metadata_available_immediately(self):
+        result = ReviewsResult(
+            first_page_reviews=[],
+            remaining=iter([]),
+            total_review_count=42,
+            average_rating=4.5,
+        )
+        assert result.total_review_count == 42
+        assert result.average_rating == 4.5
+
+    def test_reviews_is_generator(self):
+        r1 = _make_review("r1")
+        result = ReviewsResult(
+            first_page_reviews=[r1],
+            remaining=iter([]),
+            total_review_count=1,
+            average_rating=5.0,
+        )
+        assert hasattr(result.reviews, "__next__")
+
+    def test_iter_yields_reviews(self):
+        r1 = _make_review("r1")
+        r2 = _make_review("r2")
+        r3 = _make_review("r3")
+        result = ReviewsResult(
+            first_page_reviews=[r1, r2],
+            remaining=iter([r3]),
+            total_review_count=3,
+            average_rating=5.0,
+        )
+        reviews = list(result)
+        assert len(reviews) == 3
+        assert [r.review_id for r in reviews] == ["r1", "r2", "r3"]
+
+    def test_single_use_generator(self):
+        r1 = _make_review("r1")
+        result = ReviewsResult(
+            first_page_reviews=[r1],
+            remaining=iter([]),
+            total_review_count=1,
+            average_rating=5.0,
+        )
+        assert len(list(result)) == 1
+        assert len(list(result)) == 0
+
+    def test_reviews_property_returns_same_generator(self):
+        result = ReviewsResult(
+            first_page_reviews=[],
+            remaining=iter([]),
+            total_review_count=0,
+            average_rating=0.0,
+        )
+        assert result.reviews is result.reviews

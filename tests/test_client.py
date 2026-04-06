@@ -15,7 +15,7 @@ from google_reviews_client.exceptions import (
     RateLimitError,
 )
 from google_reviews_client.http_client import BaseHTTPClient
-from google_reviews_client.models import Review, ReviewsPage
+from google_reviews_client.models import Review, ReviewsPage, ReviewsResult
 
 
 class TestGoogleReviewsClientInit:
@@ -365,13 +365,12 @@ class TestListReviews:
             {"reviews": [self._review_data("r3")]},
         ]
 
-        reviews = client.list_reviews("accounts/1/locations/2")
-        first = next(reviews)
-        assert first.review_id == "r1"
+        result = client.list_reviews("accounts/1/locations/2")
+        # First page fetched eagerly on construction
         assert client.http_client.get.call_count == 1
 
-        remaining = list(reviews)
-        assert len(remaining) == 2
+        reviews = list(result)
+        assert len(reviews) == 3
         assert client.http_client.get.call_count == 2
 
     def test_passes_page_token_in_params(self):
@@ -618,3 +617,123 @@ class TestGetReviewsPage:
         call_args = client.http_client.get.call_args
         url = call_args.args[0] if call_args.args else call_args.kwargs.get("url", "")
         assert "mybusiness.googleapis.com/v4/accounts/1/locations/2/reviews" in url
+
+
+class TestListReviewsResult:
+    def _make_client(self):
+        creds = Mock(spec=google.auth.credentials.Credentials)
+        client = GoogleReviewsClient(credentials=creds)
+        client.http_client = Mock(spec=BaseHTTPClient)
+        return client
+
+    def _review_data(self, review_id="r1", rating="FIVE", comment="Great!", update_time="2024-01-15T10:00:00Z"):
+        return {
+            "reviewId": review_id,
+            "reviewer": {"displayName": "User"},
+            "starRating": rating,
+            "comment": comment,
+            "createTime": "2024-01-01T00:00:00Z",
+            "updateTime": update_time,
+        }
+
+    def test_returns_reviews_result(self):
+        client = self._make_client()
+        client.http_client.get.return_value = {
+            "reviews": [self._review_data("r1")],
+        }
+
+        result = client.list_reviews("accounts/1/locations/2")
+
+        assert isinstance(result, ReviewsResult)
+
+    def test_metadata_available_before_iteration(self):
+        client = self._make_client()
+        client.http_client.get.return_value = {
+            "reviews": [self._review_data("r1")],
+            "averageRating": 4.3,
+            "totalReviewCount": 127,
+        }
+
+        result = client.list_reviews("accounts/1/locations/2")
+
+        assert result.total_review_count == 127
+        assert result.average_rating == 4.3
+        # Only first page fetched eagerly
+        assert client.http_client.get.call_count == 1
+
+    def test_backward_compat_for_loop(self):
+        client = self._make_client()
+        client.http_client.get.side_effect = [
+            {"reviews": [self._review_data("r1")], "nextPageToken": "page2"},
+            {"reviews": [self._review_data("r2")]},
+        ]
+
+        result = client.list_reviews("accounts/1/locations/2")
+        reviews = list(result)
+
+        assert len(reviews) == 2
+        assert reviews[0].review_id == "r1"
+        assert reviews[1].review_id == "r2"
+        assert client.http_client.get.call_count == 2
+
+    def test_page_size_param(self):
+        client = self._make_client()
+        client.http_client.get.return_value = {
+            "reviews": [self._review_data("r1")],
+        }
+
+        client.list_reviews("accounts/1/locations/2", page_size=10)
+
+        call_kwargs = client.http_client.get.call_args
+        params = call_kwargs.kwargs.get("params", {})
+        assert params.get("pageSize") == "10"
+
+    def test_lazy_remaining_pages(self):
+        client = self._make_client()
+        client.http_client.get.side_effect = [
+            {"reviews": [self._review_data("r1")], "nextPageToken": "page2"},
+            {"reviews": [self._review_data("r2")]},
+        ]
+
+        result = client.list_reviews("accounts/1/locations/2")
+        # Only first page fetched on construction
+        assert client.http_client.get.call_count == 1
+
+        # Consuming the iterator fetches remaining pages
+        list(result)
+        assert client.http_client.get.call_count == 2
+
+    def test_since_filters_first_page(self):
+        client = self._make_client()
+        client.http_client.get.return_value = {
+            "reviews": [
+                self._review_data("new", update_time="2024-06-01T00:00:00Z"),
+                self._review_data("old", update_time="2024-01-01T00:00:00Z"),
+            ],
+        }
+
+        cutoff = datetime(2024, 3, 1, tzinfo=timezone.utc)
+        result = client.list_reviews("accounts/1/locations/2", since=cutoff)
+        reviews = list(result)
+
+        assert len(reviews) == 1
+        assert reviews[0].review_id == "new"
+
+    def test_since_stops_remaining_pages_early(self):
+        client = self._make_client()
+        client.http_client.get.side_effect = [
+            {
+                "reviews": [self._review_data("new1", update_time="2024-06-01T00:00:00Z")],
+                "nextPageToken": "page2",
+            },
+            {
+                "reviews": [self._review_data("old1", update_time="2024-01-01T00:00:00Z")],
+            },
+        ]
+
+        cutoff = datetime(2024, 3, 1, tzinfo=timezone.utc)
+        result = client.list_reviews("accounts/1/locations/2", since=cutoff)
+        reviews = list(result)
+
+        assert len(reviews) == 1
+        assert reviews[0].review_id == "new1"
