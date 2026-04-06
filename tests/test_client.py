@@ -15,7 +15,7 @@ from google_reviews_client.exceptions import (
     RateLimitError,
 )
 from google_reviews_client.http_client import BaseHTTPClient
-from google_reviews_client.models import Review
+from google_reviews_client.models import Review, ReviewsPage
 
 
 class TestGoogleReviewsClientInit:
@@ -492,3 +492,129 @@ class TestHttpxAuthRequest:
         mock_request.assert_called_once_with(
             "GET", "https://example.com", content=None, headers={"Authorization": "Basic abc"}, timeout=30
         )
+
+
+class TestGetReviewsPage:
+    def _make_client(self):
+        creds = Mock(spec=google.auth.credentials.Credentials)
+        client = GoogleReviewsClient(credentials=creds)
+        client.http_client = Mock(spec=BaseHTTPClient)
+        return client
+
+    def _review_data(self, review_id="r1", rating="FIVE", comment="Great!", update_time="2024-01-15T10:00:00Z"):
+        return {
+            "reviewId": review_id,
+            "reviewer": {"displayName": "User"},
+            "starRating": rating,
+            "comment": comment,
+            "createTime": "2024-01-01T00:00:00Z",
+            "updateTime": update_time,
+        }
+
+    def test_returns_reviews_page_with_reviews(self):
+        client = self._make_client()
+        client.http_client.get.return_value = {
+            "reviews": [self._review_data("r1"), self._review_data("r2")],
+        }
+
+        page = client.get_reviews_page("accounts/1/locations/2")
+
+        assert isinstance(page, ReviewsPage)
+        assert len(page.reviews) == 2
+        assert all(isinstance(r, Review) for r in page.reviews)
+
+    def test_returns_metadata(self):
+        client = self._make_client()
+        client.http_client.get.return_value = {
+            "reviews": [self._review_data()],
+            "averageRating": 4.3,
+            "totalReviewCount": 127,
+        }
+
+        page = client.get_reviews_page("accounts/1/locations/2")
+
+        assert page.average_rating == 4.3
+        assert page.total_review_count == 127
+
+    def test_returns_next_page_token(self):
+        client = self._make_client()
+        client.http_client.get.return_value = {
+            "reviews": [self._review_data()],
+            "nextPageToken": "tok_next",
+        }
+
+        page = client.get_reviews_page("accounts/1/locations/2")
+
+        assert page.next_page_token == "tok_next"
+
+    def test_no_next_page_token(self):
+        client = self._make_client()
+        client.http_client.get.return_value = {
+            "reviews": [self._review_data()],
+        }
+
+        page = client.get_reviews_page("accounts/1/locations/2")
+
+        assert page.next_page_token is None
+
+    def test_passes_page_token_param(self):
+        client = self._make_client()
+        client.http_client.get.return_value = {"reviews": []}
+
+        client.get_reviews_page("accounts/1/locations/2", page_token="tok")  # noqa: S106
+
+        call_kwargs = client.http_client.get.call_args
+        params = call_kwargs.kwargs.get("params", {})
+        assert params.get("pageToken") == "tok"
+
+    def test_passes_page_size_as_string(self):
+        client = self._make_client()
+        client.http_client.get.return_value = {"reviews": []}
+
+        client.get_reviews_page("accounts/1/locations/2", page_size=10)
+
+        call_kwargs = client.http_client.get.call_args
+        params = call_kwargs.kwargs.get("params", {})
+        assert params.get("pageSize") == "10"
+
+    def test_passes_order_by(self):
+        client = self._make_client()
+        client.http_client.get.return_value = {"reviews": []}
+
+        client.get_reviews_page("accounts/1/locations/2", order_by="rating desc")
+
+        call_kwargs = client.http_client.get.call_args
+        params = call_kwargs.kwargs.get("params", {})
+        assert params.get("orderBy") == "rating desc"
+
+    def test_passes_language_header(self):
+        client = self._make_client()
+        client.http_client.get.return_value = {"reviews": []}
+
+        client.get_reviews_page("accounts/1/locations/2", language="pt-BR")
+
+        call_kwargs = client.http_client.get.call_args
+        headers = call_kwargs.kwargs.get("headers", {})
+        assert headers.get("Accept-Language") == "pt-BR"
+
+    def test_empty_response(self):
+        client = self._make_client()
+        client.http_client.get.return_value = {}
+
+        page = client.get_reviews_page("accounts/1/locations/2")
+
+        assert isinstance(page, ReviewsPage)
+        assert page.reviews == []
+        assert page.next_page_token is None
+        assert page.total_review_count is None
+        assert page.average_rating is None
+
+    def test_calls_correct_url(self):
+        client = self._make_client()
+        client.http_client.get.return_value = {"reviews": []}
+
+        client.get_reviews_page("accounts/1/locations/2")
+
+        call_args = client.http_client.get.call_args
+        url = call_args.args[0] if call_args.args else call_args.kwargs.get("url", "")
+        assert "mybusiness.googleapis.com/v4/accounts/1/locations/2/reviews" in url

@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 
-from google_reviews_client.models import Account, Location, Review, Reviewer, ReviewReply, StarRating
+from google_reviews_client.models import Account, Location, Review, Reviewer, ReviewReply, ReviewsPage, StarRating
 
 
 class TestAccountFromApiResponse:
@@ -238,3 +238,33 @@ class TestReviewFromApiResponse:
         review = Review.from_api_response(data)
         result = review.to_dict()
         assert result["review_reply"] is None
+
+
+class TestReviewsPage:
+    def test_creation_with_defaults(self):
+        page = ReviewsPage(reviews=[])
+        assert page.reviews == []
+        assert page.next_page_token is None
+        assert page.total_review_count is None
+        assert page.average_rating is None
+
+    def test_creation_with_all_fields(self):
+        review = Review.from_api_response({
+            "reviewId": "r1",
+            "reviewer": {"displayName": "Test"},
+            "starRating": "FIVE",
+            "comment": "Good",
+            "createTime": "2024-01-01T00:00:00Z",
+            "updateTime": "2024-01-01T00:00:00Z",
+        })
+        page = ReviewsPage(
+            reviews=[review],
+            next_page_token="tok123",  # noqa: S106
+            total_review_count=42,
+            average_rating=4.5,
+        )
+        assert len(page.reviews) == 1
+        assert page.reviews[0].review_id == "r1"
+        assert page.next_page_token == "tok123"
+        assert page.total_review_count == 42
+        assert page.average_rating == 4.5
