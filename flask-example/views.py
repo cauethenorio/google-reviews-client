@@ -51,6 +51,8 @@ def index():
                 return redirect("/login")
             except (GooglePermissionError, RateLimitError, NotFoundError, GoogleAPIError) as exc:
                 return render_template("accounts.html", error=_error_context(exc), accounts=[], show_logout=True)
+            if len(accounts) == 1:
+                return redirect(f"/account/{accounts[0].name.split('/')[-1]}")
             return render_template("accounts.html", accounts=accounts, show_logout=True)
 
     return render_template("index.html", error=request.args.get("error"))
@@ -86,6 +88,10 @@ def account_detail(account_id):
             breadcrumbs=breadcrumbs,
             show_logout=True,
         )
+
+    if len(locations) == 1:
+        loc = locations[0]
+        return redirect(f"/location/{loc.location_id}?account={account_id}")
 
     breadcrumbs = [{"label": "Accounts", "url": "/"}, {"label": account.account_name, "url": ""}]
     return render_template(

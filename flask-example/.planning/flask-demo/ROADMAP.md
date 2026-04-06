@@ -76,8 +76,8 @@ Plans:
   4. A copy-pasteable code snippet showing how to use the library appears at the bottom of the reviews page
 **Plans**: 2 plans
 Plans:
-- [ ] 04-01-PLAN.md — Star ratings, reviewer photos, summary bar, code snippet with copy button
-- [ ] 04-02-PLAN.md — Test suite for all polish features
+- [x] 04-01-PLAN.md — Star ratings, reviewer photos, summary bar, code snippet with copy button
+- [x] 04-02-PLAN.md — Test suite for all polish features
 **UI hint**: yes
 
 ## Progress
@@ -90,4 +90,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 | 1. Foundation | 2/2 | Complete | 2026-04-04 |
 | 2. Auth and Landing | 2/2 | Complete | 2026-04-04 |
 | 3. Data Browsing | 0/2 | In progress | - |
-| 4. Polish | 0/2 | Not started | - |
+| 4. Polish | 2/2 | Complete | 2026-04-04 |
