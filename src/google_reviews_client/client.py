@@ -21,7 +21,7 @@ from .exceptions import (
 )
 from .http_client.base_client import BaseHTTPClient
 from .http_client.httpx_client import HttpxHTTPClient
-from .models import Account, Location, Review
+from .models import Account, Location, Review, ReviewsPage
 
 logger = logging.getLogger(__name__)
 
@@ -133,6 +133,46 @@ class GoogleReviewsClient:
         )
         return [Location.from_api_response(loc, account=account) for loc in data.get("locations", [])]
 
+    def get_reviews_page(
+        self,
+        location: str,
+        *,
+        page_token: str | None = None,
+        page_size: int | None = None,
+        order_by: str | None = None,
+        language: str | None = None,
+    ) -> ReviewsPage:
+        """Fetch a single page of reviews for the given location.
+
+        Args:
+            location: Location resource name (e.g., "accounts/123/locations/456").
+            page_token: Token for fetching the next page of results.
+            page_size: Number of reviews per page.
+            order_by: Sort order string (e.g., "updateTime desc").
+            language: Accept-Language header value for review translation.
+
+        Returns:
+            ReviewsPage containing reviews and pagination metadata.
+
+        """
+        url = f"{BUSINESS_BASE}/{location}/reviews"
+        params: dict[str, str] = {}
+        if page_token:
+            params["pageToken"] = page_token
+        if page_size is not None:
+            params["pageSize"] = str(page_size)
+        if order_by is not None:
+            params["orderBy"] = order_by
+        extra_headers = {"Accept-Language": language} if language else None
+        data = self._authenticated_get(url, params=params, extra_headers=extra_headers)
+        reviews = [Review.from_api_response(r) for r in data.get("reviews", [])]
+        return ReviewsPage(
+            reviews=reviews,
+            next_page_token=data.get("nextPageToken"),
+            total_review_count=data.get("totalReviewCount"),
+            average_rating=data.get("averageRating"),
+        )
+
     def list_reviews(
         self,
         location: str,
@@ -153,27 +193,18 @@ class GoogleReviewsClient:
             Review objects from the API, one at a time.
 
         """
-        url = f"{BUSINESS_BASE}/{location}/reviews"
-        page_token = None
-        extra_headers = {"Accept-Language": language} if language else None
-
         # When syncing, order by updateTime desc so we can stop early
         # once we reach reviews we've already seen
         if since is not None and order_by is None:
             order_by = "updateTime desc"
 
+        page_token = None
         while True:
-            params: dict[str, str] = {}
-            if page_token:
-                params["pageToken"] = page_token
-            if order_by is not None:
-                params["orderBy"] = order_by
-            data = self._authenticated_get(url, params=params, extra_headers=extra_headers)
-            for review_data in data.get("reviews", []):
-                review = Review.from_api_response(review_data)
+            page = self.get_reviews_page(location, page_token=page_token, order_by=order_by, language=language)
+            for review in page.reviews:
                 if since is not None and review.update_time <= since:
                     return
                 yield review
-            page_token = data.get("nextPageToken")
+            page_token = page.next_page_token
             if not page_token:
                 break

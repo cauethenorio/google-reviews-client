@@ -132,6 +132,16 @@ class Review:
 
 
 @dataclass
+class ReviewsPage:
+    """A single page of reviews with pagination and aggregate metadata."""
+
+    reviews: list[Review]
+    next_page_token: str | None = None
+    total_review_count: int | None = None
+    average_rating: float | None = None
+
+
+@dataclass
 class Location:
     """Google Business location.
 
