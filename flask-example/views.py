@@ -158,6 +158,21 @@ def location_detail(account_id, location_id):
     )
 
 
+def _fetch_reviews(client, location_name, page_token, lang):
+    """Fetch reviews with language fallback. Returns (reviews, next_token, total, avg, lang, lang_error)."""
+    lang_error = None
+    try:
+        reviews, next_token, total, avg = get_reviews_page(client, location_name, page_token, language=lang)
+    except (GoogleAPIError, GooglePermissionError, RateLimitError, NotFoundError):
+        if not lang:
+            raise
+        # Language may be invalid — retry without it
+        reviews, next_token, total, avg = get_reviews_page(client, location_name, page_token)
+        lang_error = f'Language "{lang}" is not supported. Showing reviews in the default language.'
+        lang = None
+    return reviews, next_token, total, avg, lang, lang_error
+
+
 @views_bp.route("/account/<account_id>/location/<location_id>/reviews")
 @login_required
 def reviews(account_id, location_id):
@@ -185,8 +200,8 @@ def reviews(account_id, location_id):
         locations = client.list_locations(account_name)
         location = next((loc for loc in locations if loc.location_id == location_id), None)
 
-        review_list, next_token, total_review_count, average_rating = get_reviews_page(
-            client, location_name, page_token, language=lang
+        review_list, next_token, total_review_count, average_rating, lang, lang_error = _fetch_reviews(
+            client, location_name, page_token, lang
         )
     except AuthenticationError:
         return redirect("/login")
@@ -244,6 +259,7 @@ def reviews(account_id, location_id):
         prev_token=prev_token,
         current_page_token=page_token,
         lang=lang,
+        lang_error=lang_error,
         show_logout=True,
     )
 
