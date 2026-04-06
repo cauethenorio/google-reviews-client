@@ -8,7 +8,7 @@
   {{ lang_error }}
 </div>
 {% endif %}
-<div class="flex items-center justify-between mb-6">
+<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
   <h1 class="text-2xl font-bold text-gray-900">Reviews for {{ location.title or "Location" }}</h1>
   <form method="get" class="flex items-center gap-2">
     <label for="lang" class="text-sm text-gray-500">Language:</label>
@@ -17,7 +17,7 @@
   </form>
 </div>
 {% if total_review_count is not none %}
-<div class="bg-white rounded-lg shadow-sm border border-gray-200 px-4 py-4 mb-6 flex items-center justify-between">
+<div class="bg-white rounded-lg shadow-sm border border-gray-200 px-4 py-4 mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
   <div class="flex items-center gap-6">
     <div>
       <span class="text-xl font-bold text-gray-900">{{ average_rating }}</span>
@@ -72,7 +72,7 @@
   {% endfor %}
 </div>
 
-<div class="mt-6 flex items-center justify-end gap-4">
+<div class="mt-6 flex flex-wrap items-center justify-end gap-3">
   {% set lang_param = "&lang=" ~ lang if lang else "" %}
   {% if page > 1 and prev_token %}
   <a href="/account/{{ account.name.split('/')[-1] }}/location/{{ location.location_id }}/reviews?page_token={{ prev_token }}&page={{ page - 1 }}{% if current_page_token %}&prev_token={{ current_page_token }}{% endif %}{{ lang_param }}" class="text-blue-600 hover:text-blue-700 font-medium text-sm">&larr; Previous page</a>

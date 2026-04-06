@@ -4,7 +4,7 @@
 {% include "_breadcrumb.html" %}
 {% include "_error.html" %}
 <h1 class="text-2xl font-bold text-gray-900 mb-2">{{ account.account_name }}</h1>
-<div class="flex items-center gap-3 mb-6 text-sm text-gray-500">
+<div class="flex flex-wrap items-center gap-x-3 gap-y-1 mb-6 text-sm text-gray-500">
   {% if account.type %}<span>{{ account.type }}</span>{% endif %}
   {% if account.verification_state %}<span>&middot; {{ account.verification_state }}</span>{% endif %}
   {% if locations %}<span>&middot; {{ locations|length }} location{{ "s" if locations|length != 1 }}</span>{% endif %}

@@ -1,6 +1,6 @@
 {% if breadcrumbs %}
 <nav aria-label="Breadcrumb" class="mb-6">
-  <ol class="flex items-center space-x-2 text-sm text-gray-500">
+  <ol class="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-gray-500">
     {% for crumb in breadcrumbs %}
     <li class="flex items-center">
       {% if not loop.last %}
