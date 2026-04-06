@@ -3,9 +3,11 @@
 {% block content %}
 {% include "_breadcrumb.html" %}
 {% include "_error.html" %}
-<h1 class="text-2xl font-bold text-gray-900 mb-6">{{ location.title or "Unnamed location" }}</h1>
-{% if location.store_code %}
-<p class="text-sm text-gray-500 mb-6">Store code: {{ location.store_code }}</p>
-{% endif %}
+<h1 class="text-2xl font-bold text-gray-900 mb-2">{{ location.title or "Unnamed location" }}</h1>
+<div class="flex items-center gap-3 mb-6 text-sm text-gray-500">
+  {% if location.store_code %}<span>Code: {{ location.store_code }}</span>{% endif %}
+  {% if location.language_code %}<span>&middot; Language: {{ location.language_code }}</span>{% endif %}
+  <span>&middot; Account: {{ account.account_name }}</span>
+</div>
 <a href="/account/{{ account.name.split('/')[-1] }}/location/{{ location.location_id }}/reviews" class="inline-block bg-blue-600 text-white rounded-lg px-6 py-3 hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 font-medium">View Reviews</a>
 {% endblock %}
