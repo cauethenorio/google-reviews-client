@@ -41,7 +41,7 @@ def index():
     cookie = request.cookies.get(TOKEN_COOKIE_NAME)
     if cookie:
         data = decrypt_tokens(cookie, current_app.config["FERNET"])
-        if data is not None and data.get("auth_status") == "authenticated":
+        if data and data.get("auth_status") == "authenticated":
             client = get_client()
             if client is None:
                 return redirect("/login")

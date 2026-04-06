@@ -30,7 +30,7 @@ def create_app():
 
     app = Flask(__name__)
     app.secret_key = os.environ["SECRET_KEY"]
-    app.config["FERNET"] = Fernet(_make_fernet_key(os.environ["SECRET_KEY"]))
+    app.config["FERNET"] = Fernet(_make_fernet_key(app.secret_key))
     app.config["GOOGLE_CLIENT_ID"] = os.environ["GOOGLE_CLIENT_ID"]
     app.config["GOOGLE_CLIENT_SECRET"] = os.environ["GOOGLE_CLIENT_SECRET"]
 

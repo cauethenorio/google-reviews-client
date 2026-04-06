@@ -3,10 +3,9 @@
 import os
 from functools import wraps
 
-from flask import Blueprint, make_response, redirect, render_template, request, url_for, current_app
+from cookies import COOKIE_MAX_AGE, TOKEN_COOKIE_NAME, decrypt_tokens, encrypt_tokens
+from flask import Blueprint, current_app, make_response, redirect, render_template, request, url_for
 from google_auth_oauthlib.flow import Flow
-
-from cookies import encrypt_tokens, decrypt_tokens, TOKEN_COOKIE_NAME, COOKIE_MAX_AGE
 
 # Allow HTTP for local development (OAuthlib requires HTTPS by default)
 if os.environ.get("FLASK_DEBUG"):
@@ -55,17 +54,11 @@ def login():
         current_app.config["GOOGLE_CLIENT_SECRET"],
     )
 
-    redirect_uri = os.environ.get("REDIRECT_URI") or url_for(
-        "auth.callback", _external=True
-    )
+    redirect_uri = os.environ.get("REDIRECT_URI") or url_for("auth.callback", _external=True)
 
-    flow = Flow.from_client_config(
-        client_config, scopes=SCOPES, redirect_uri=redirect_uri
-    )
+    flow = Flow.from_client_config(client_config, scopes=SCOPES, redirect_uri=redirect_uri)
 
-    authorization_url, state = flow.authorization_url(
-        access_type="offline", prompt="consent"
-    )
+    authorization_url, state = flow.authorization_url(access_type="offline", prompt="consent")
 
     pending_data = {
         "auth_status": "pending",
@@ -108,9 +101,7 @@ def callback():
         current_app.config["GOOGLE_CLIENT_SECRET"],
     )
 
-    redirect_uri = os.environ.get("REDIRECT_URI") or url_for(
-        "auth.callback", _external=True
-    )
+    redirect_uri = os.environ.get("REDIRECT_URI") or url_for("auth.callback", _external=True)
 
     flow = Flow.from_client_config(
         client_config,
