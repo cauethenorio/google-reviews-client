@@ -29,10 +29,10 @@ def get_client():
     return GoogleReviewsClient(creds)
 
 
-def get_reviews_page(client, location_name, page_token=None, language=None):
+def get_reviews_page(client, location_name, page_token=None, language=None, page_size=50):
     """Fetch a single page of reviews, returning (reviews, next_page_token, total, avg)."""
     url = f"{BUSINESS_BASE}/{location_name}/reviews"
-    params = {}
+    params = {"pageSize": page_size}
     if page_token:
         params["pageToken"] = page_token
     if language:
