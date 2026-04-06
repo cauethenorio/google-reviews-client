@@ -163,6 +163,8 @@ def location_detail(account_id, location_id):
 def reviews(account_id, location_id):
     """Show paginated reviews for a location."""
     page_token = request.args.get("page_token")
+    page = int(request.args.get("page", 1))
+    prev_token = request.args.get("prev_token")
 
     client = get_client()
     if client is None:
@@ -207,6 +209,8 @@ def reviews(account_id, location_id):
             total_review_count=None,
             average_rating=None,
             avg_rounded=0,
+            page=page,
+            prev_token=None,
             show_logout=True,
         )
 
@@ -232,6 +236,9 @@ def reviews(account_id, location_id):
         total_review_count=total_review_count,
         average_rating=average_rating,
         avg_rounded=avg_rounded,
+        page=page,
+        prev_token=prev_token,
+        current_page_token=page_token,
         show_logout=True,
     )
 

@@ -57,11 +57,19 @@
   {% endfor %}
 </div>
 
-<div class="mt-6 flex justify-between items-center">
+<div class="mt-6 flex items-center justify-between">
   <a href="/account/{{ account.name.split('/')[-1] }}/location/{{ location.location_id }}/reviews/download" class="inline-flex items-center gap-2 bg-white border border-gray-300 rounded-lg px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">Download all reviews (JSON)</a>
-  {% if next_page_token %}
-  <a href="/account/{{ account.name.split('/')[-1] }}/location/{{ location.location_id }}/reviews?page_token={{ next_page_token }}" class="text-blue-600 hover:text-blue-700 font-medium text-sm">Next page &rarr;</a>
-  {% endif %}
+  <div class="flex items-center gap-4">
+    {% if page > 1 and prev_token %}
+    <a href="/account/{{ account.name.split('/')[-1] }}/location/{{ location.location_id }}/reviews?page_token={{ prev_token }}&page={{ page - 1 }}{% if current_page_token %}&prev_token={{ current_page_token }}{% endif %}" class="text-blue-600 hover:text-blue-700 font-medium text-sm">&larr; Previous page</a>
+    {% elif page > 1 %}
+    <a href="/account/{{ account.name.split('/')[-1] }}/location/{{ location.location_id }}/reviews?page={{ page - 1 }}" class="text-blue-600 hover:text-blue-700 font-medium text-sm">&larr; Previous page</a>
+    {% endif %}
+    <span class="text-sm text-gray-500">Page {{ page }}</span>
+    {% if next_page_token %}
+    <a href="/account/{{ account.name.split('/')[-1] }}/location/{{ location.location_id }}/reviews?page_token={{ next_page_token }}&page={{ page + 1 }}&prev_token={{ current_page_token or '' }}" class="text-blue-600 hover:text-blue-700 font-medium text-sm">Next page &rarr;</a>
+    {% endif %}
+  </div>
 </div>
 {% else %}
 <div class="text-center py-12">
