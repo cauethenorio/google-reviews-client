@@ -58,8 +58,8 @@ class TestLogin:
         # Extract cookie value from Set-Cookie header
         cookie_header = response.headers.get("Set-Cookie", "")
         # Parse the cookie value (format: name=value; ...)
-        for part in cookie_header.split(";"):
-            part = part.strip()
+        for raw_part in cookie_header.split(";"):
+            part = raw_part.strip()
             if part.startswith(f"{TOKEN_COOKIE_NAME}="):
                 cookie_value = part.split("=", 1)[1]
                 break
@@ -83,9 +83,7 @@ class TestLogin:
 
         client.get("/login")
 
-        mock_flow.authorization_url.assert_called_once_with(
-            access_type="offline", prompt="consent"
-        )
+        mock_flow.authorization_url.assert_called_once_with(access_type="offline", prompt="consent")
 
 
 class TestCallback:
@@ -107,16 +105,12 @@ class TestCallback:
     def test_callback_with_google_error_redirects(self, client, pending_cookie):
         """Google error param is forwarded to landing page."""
         client.set_cookie(TOKEN_COOKIE_NAME, pending_cookie)
-        response = client.get(
-            "/callback?error=access_denied&state=test-state-value"
-        )
+        response = client.get("/callback?error=access_denied&state=test-state-value")
         assert response.status_code == 302
         assert "error=access_denied" in response.location
 
     @mock.patch("auth.Flow")
-    def test_callback_success_sets_authenticated_cookie(
-        self, mock_flow_cls, client, pending_cookie, fernet
-    ):
+    def test_callback_success_sets_authenticated_cookie(self, mock_flow_cls, client, pending_cookie, fernet):
         """Successful callback renders success page with meta refresh."""
         mock_flow = MagicMock()
         mock_creds = MagicMock()
@@ -127,9 +121,7 @@ class TestCallback:
         mock_flow_cls.from_client_config.return_value = mock_flow
 
         client.set_cookie(TOKEN_COOKIE_NAME, pending_cookie)
-        response = client.get(
-            "/callback?state=test-state-value&code=auth-code"
-        )
+        response = client.get("/callback?state=test-state-value&code=auth-code")
 
         assert response.status_code == 200
         assert b"Authenticated successfully!" in response.data
@@ -137,8 +129,8 @@ class TestCallback:
 
         # Verify the cookie contains authenticated data
         cookie_header = response.headers.get("Set-Cookie", "")
-        for part in cookie_header.split(";"):
-            part = part.strip()
+        for raw_part in cookie_header.split(";"):
+            part = raw_part.strip()
             if part.startswith(f"{TOKEN_COOKIE_NAME}="):
                 cookie_value = part.split("=", 1)[1]
                 break
