@@ -156,11 +156,14 @@ class GoogleReviewsClient:
 
         """
         url = f"{BUSINESS_BASE}/{location}/reviews"
-        params: dict[str, str] = {
+        # Drop unset params: httpx serializes None values as empty strings
+        # (pageSize=), which the API rejects for typed fields
+        optional_params = {
             "pageToken": page_token,
             "pageSize": str(page_size) if page_size is not None else None,
             "orderBy": order_by,
         }
+        params: dict[str, str] = {k: v for k, v in optional_params.items() if v is not None}
 
         extra_headers = {"Accept-Language": language} if language else None
         data = self._authenticated_get(url, params=params, extra_headers=extra_headers)

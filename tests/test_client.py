@@ -586,6 +586,20 @@ class TestGetReviewsPage:
         params = call_kwargs.kwargs.get("params", {})
         assert params.get("orderBy") == "rating desc"
 
+    def test_omits_unset_params(self):
+        # httpx serializes None param values as empty strings (e.g. pageSize=),
+        # which the API rejects for typed fields, so None params must be dropped
+        client = self._make_client()
+        client.http_client.get.return_value = {"reviews": []}
+
+        client.get_reviews_page("accounts/1/locations/2")
+
+        call_kwargs = client.http_client.get.call_args
+        params = call_kwargs.kwargs.get("params", {})
+        assert "pageToken" not in params
+        assert "pageSize" not in params
+        assert "orderBy" not in params
+
     def test_passes_language_header(self):
         client = self._make_client()
         client.http_client.get.return_value = {"reviews": []}
