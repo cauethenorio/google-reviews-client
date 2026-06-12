@@ -1,7 +1,9 @@
-"""Tests for api.py helpers: get_client() and get_reviews_page()."""
+"""Tests for api.py helpers: get_client(), get_reviews_page(), and get_all_reviews()."""
 
 from unittest import mock
 from unittest.mock import MagicMock
+
+from google_reviews_client.models import Review, ReviewsPage
 
 SAMPLE_REVIEW_API = {
     "reviewId": "r1",
@@ -11,6 +13,10 @@ SAMPLE_REVIEW_API = {
     "createTime": "2025-03-15T10:00:00Z",
     "updateTime": "2025-03-15T10:00:00Z",
 }
+
+
+def _sample_review(review_id="r1"):
+    return Review.from_api_response({**SAMPLE_REVIEW_API, "reviewId": review_id})
 
 
 class TestGetClient:
@@ -50,10 +56,10 @@ class TestGetReviewsPage:
     def test_returns_reviews_and_next_token(self):
         """Returns parsed reviews and next page token."""
         mock_client = MagicMock()
-        mock_client._authenticated_get.return_value = {
-            "reviews": [SAMPLE_REVIEW_API],
-            "nextPageToken": "tok2",
-        }
+        mock_client.get_reviews_page.return_value = ReviewsPage(
+            reviews=[_sample_review()],
+            next_page_token="tok2",
+        )
 
         from api import get_reviews_page
 
@@ -65,11 +71,9 @@ class TestGetReviewsPage:
         assert avg_rating is None
 
     def test_returns_reviews_without_next_token(self):
-        """No nextPageToken returns None for token."""
+        """No next_page_token returns None for token."""
         mock_client = MagicMock()
-        mock_client._authenticated_get.return_value = {
-            "reviews": [SAMPLE_REVIEW_API],
-        }
+        mock_client.get_reviews_page.return_value = ReviewsPage(reviews=[_sample_review()])
 
         from api import get_reviews_page
 
@@ -80,9 +84,9 @@ class TestGetReviewsPage:
         assert avg_rating is None
 
     def test_returns_empty_list_when_no_reviews(self):
-        """Empty response returns empty list and None."""
+        """Empty page returns empty list and None."""
         mock_client = MagicMock()
-        mock_client._authenticated_get.return_value = {}
+        mock_client.get_reviews_page.return_value = ReviewsPage(reviews=[])
 
         from api import get_reviews_page
 
@@ -92,26 +96,38 @@ class TestGetReviewsPage:
         assert total_count is None
         assert avg_rating is None
 
-    def test_passes_page_token_to_api(self):
-        """page_token is forwarded as pageToken param."""
+    def test_forwards_args_to_client(self):
+        """page_token, page_size, and language are forwarded to the client."""
         mock_client = MagicMock()
-        mock_client._authenticated_get.return_value = {}
+        mock_client.get_reviews_page.return_value = ReviewsPage(reviews=[])
 
         from api import get_reviews_page
 
         get_reviews_page(mock_client, "accounts/1/locations/2", page_token="tok1")
-        call_args = mock_client._authenticated_get.call_args
-        assert call_args[1]["params"]["pageToken"] == "tok1"
+        mock_client.get_reviews_page.assert_called_once_with(
+            "accounts/1/locations/2", page_token="tok1", page_size=50, language=None
+        )
+
+    def test_strips_language_whitespace(self):
+        """language is stripped before being forwarded."""
+        mock_client = MagicMock()
+        mock_client.get_reviews_page.return_value = ReviewsPage(reviews=[])
+
+        from api import get_reviews_page
+
+        get_reviews_page(mock_client, "accounts/1/locations/2", language=" pt-BR ")
+        call_kwargs = mock_client.get_reviews_page.call_args.kwargs
+        assert call_kwargs["language"] == "pt-BR"
 
     def test_returns_summary_data_when_present(self):
-        """Returns totalReviewCount and averageRating from API response."""
+        """Returns total_review_count and average_rating from the page."""
         mock_client = MagicMock()
-        mock_client._authenticated_get.return_value = {
-            "reviews": [SAMPLE_REVIEW_API],
-            "nextPageToken": "token123",
-            "totalReviewCount": 42,
-            "averageRating": 4.3,
-        }
+        mock_client.get_reviews_page.return_value = ReviewsPage(
+            reviews=[_sample_review()],
+            next_page_token="token123",
+            total_review_count=42,
+            average_rating=4.3,
+        )
 
         from api import get_reviews_page
 
@@ -122,11 +138,9 @@ class TestGetReviewsPage:
         assert avg_rating == 4.3
 
     def test_returns_none_when_summary_data_missing(self):
-        """Missing totalReviewCount/averageRating return as None."""
+        """Missing total_review_count/average_rating return as None."""
         mock_client = MagicMock()
-        mock_client._authenticated_get.return_value = {
-            "reviews": [SAMPLE_REVIEW_API],
-        }
+        mock_client.get_reviews_page.return_value = ReviewsPage(reviews=[_sample_review()])
 
         from api import get_reviews_page
 
@@ -135,3 +149,43 @@ class TestGetReviewsPage:
         assert next_token is None
         assert total_count is None
         assert avg_rating is None
+
+
+class TestGetAllReviews:
+    """Test get_all_reviews() pagination loop."""
+
+    def test_accumulates_reviews_across_pages(self):
+        """Follows next_page_token until exhausted, preserving order."""
+        mock_client = MagicMock()
+        mock_client.get_reviews_page.side_effect = [
+            ReviewsPage(reviews=[_sample_review("r1")], next_page_token="tok2"),
+            ReviewsPage(reviews=[_sample_review("r2")], next_page_token=None),
+        ]
+
+        from api import get_all_reviews
+
+        all_reviews = get_all_reviews(mock_client, "accounts/1/locations/2")
+        assert [r.review_id for r in all_reviews] == ["r1", "r2"]
+        assert mock_client.get_reviews_page.call_count == 2
+        second_call_kwargs = mock_client.get_reviews_page.call_args_list[1].kwargs
+        assert second_call_kwargs["page_token"] == "tok2"
+
+    def test_single_page_makes_one_call(self):
+        """No next_page_token stops after the first request."""
+        mock_client = MagicMock()
+        mock_client.get_reviews_page.return_value = ReviewsPage(reviews=[_sample_review()])
+
+        from api import get_all_reviews
+
+        all_reviews = get_all_reviews(mock_client, "accounts/1/locations/2")
+        assert len(all_reviews) == 1
+        mock_client.get_reviews_page.assert_called_once()
+
+    def test_empty_location_returns_empty_list(self):
+        """A location with no reviews returns an empty list."""
+        mock_client = MagicMock()
+        mock_client.get_reviews_page.return_value = ReviewsPage(reviews=[])
+
+        from api import get_all_reviews
+
+        assert get_all_reviews(mock_client, "accounts/1/locations/2") == []
