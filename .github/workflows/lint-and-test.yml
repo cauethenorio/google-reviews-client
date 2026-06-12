@@ -27,3 +27,16 @@ jobs:
         with:
           enable-cache: true
       - run: uv run --python ${{ matrix.python-version }} python -m pytest tests
+
+  flask-example:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: flask-example
+    steps:
+      - uses: actions/checkout@v5
+      - uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+      - run: uv sync
+      - run: uv run pytest tests
